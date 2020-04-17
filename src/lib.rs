@@ -25,9 +25,7 @@ use bytes::BytesMut;
 #[cfg(feature = "diesel_types")]
 use diesel::{
     backend::Backend,
-    deserialize::FromSqlRow,
     deserialize::{FromSql as DeFromSql, Result as DeResult},
-    expression::AsExpression,
     serialize::{Output, Result as SerResult, ToSql as DeToSql},
     sql_types::Text,
 };
