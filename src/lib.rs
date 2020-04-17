@@ -1,3 +1,8 @@
+#[cfg(feature="diesel_types")]
+#[macro_use]
+extern crate diesel;
+
+
 use anyhow::Error;
 use derive_more::{Display, From, Into};
 use inlinable_string::InlinableString;
