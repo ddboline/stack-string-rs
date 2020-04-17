@@ -1,0 +1,22 @@
+[package]
+name = "stack-string"
+version = "0.1.0"
+authors = ["Daniel Boline <ddboline@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+bytes = "0.5"
+diesel = {version="1.4", features=["postgres", "r2d2", "chrono"], optional=true}
+postgres-types = {version="0.1", optional=true}
+serde = {version="1.0", features=["derive"]}
+derive_more = "0.99"
+inlinable_string = "0.1"
+
+[features]
+default = ["diesel_types", "postgres_types"]
+
+diesel_types = ["diesel"]
+postgres_types = ["postgres-types"]
