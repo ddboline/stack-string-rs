@@ -9,9 +9,10 @@ use smartstring::alias::String as SmartString;
 use std::{
     borrow::{Borrow, Cow},
     fmt::{self, Display, Formatter},
+    iter::FromIterator,
+    path::Path,
     str::FromStr,
     string::FromUtf8Error,
-    path::Path,
 };
 
 #[cfg(feature = "diesel_types")]
@@ -279,5 +280,13 @@ impl<'a> PartialEq<&'a str> for StackString {
     #[inline]
     fn eq(&self, other: &&'a str) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl FromIterator<char> for StackString {
+    fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
+        let mut buf = Self::new();
+        buf.0.extend(iter);
+        buf
     }
 }
