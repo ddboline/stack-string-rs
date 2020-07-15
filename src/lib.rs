@@ -10,6 +10,7 @@ use std::{
     borrow::{Borrow, Cow},
     fmt::{self, Display, Formatter},
     str::FromStr,
+    string::FromUtf8Error,
 };
 
 #[cfg(feature = "diesel_types")]
@@ -76,6 +77,10 @@ impl StackString {
 
     pub fn split_off(&mut self, index: usize) -> Self {
         Self(self.0.split_off(index))
+    }
+
+    pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
+        String::from_utf8(vec).map(Into::into)
     }
 }
 
