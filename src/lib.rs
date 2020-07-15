@@ -11,6 +11,7 @@ use std::{
     fmt::{self, Display, Formatter},
     str::FromStr,
     string::FromUtf8Error,
+    path::Path,
 };
 
 #[cfg(feature = "diesel_types")]
@@ -237,6 +238,12 @@ where
 impl AsRef<str> for StackString {
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+
+impl AsRef<Path> for StackString {
+    fn as_ref(&self) -> &Path {
+        Path::new(self.0.as_str())
     }
 }
 
