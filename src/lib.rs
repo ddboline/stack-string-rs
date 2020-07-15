@@ -75,6 +75,10 @@ impl StackString {
         Self(SmartString::new())
     }
 
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+
     pub fn split_off(&mut self, index: usize) -> Self {
         Self(self.0.split_off(index))
     }
