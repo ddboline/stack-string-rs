@@ -20,6 +20,9 @@ use diesel::{
     sql_types::Text,
 };
 
+#[cfg(feature = "diesel_types")]
+use std::io::Write;
+
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
