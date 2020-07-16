@@ -140,7 +140,7 @@ impl Display for StackString {
 
 impl From<StackString> for String {
     fn from(item: StackString) -> Self {
-        item.into()
+        item.0.into()
     }
 }
 
@@ -208,7 +208,7 @@ impl ToSql for StackString {
         ty: &Type,
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
-        self.to_string().to_sql_checked(ty, out)
+        self.as_str().to_sql_checked(ty, out)
     }
 }
 
