@@ -93,6 +93,10 @@ impl StackString {
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }
+
+    pub fn contains<T: AsRef<str>>(&self, s: T) -> bool {
+        self.as_str().contains(s.as_ref())
+    }
 }
 
 impl From<StackString> for String {
@@ -251,5 +255,18 @@ where
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> SerResult {
         self.as_str().to_sql(out)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::StackString;
+
+    #[test]
+    fn test_contains() {
+        let a: StackString = "hey there".into();
+        let b: StackString = "hey".into();
+        assert!(a.contains(&b));
     }
 }
