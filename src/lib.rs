@@ -93,10 +93,6 @@ impl StackString {
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }
-
-    pub fn contains<T: AsRef<str>>(&self, s: T) -> bool {
-        self.as_str().contains(s.as_ref())
-    }
 }
 
 impl From<StackString> for String {
@@ -258,15 +254,20 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::StackString;
 
     #[test]
-    fn test_contains() {
+    fn test_contains_stackstring() {
         let a: StackString = "hey there".into();
         let b: StackString = "hey".into();
-        assert!(a.contains(&b));
+        assert!(a.contains(b.as_str()));
+    }
+
+    #[test]
+    fn test_contains_char() {
+        let a: StackString = "hey there".into();
+        assert!(a.contains(' '));
     }
 }
