@@ -119,6 +119,12 @@ impl From<&str> for StackString {
     }
 }
 
+impl<'a> From<&'a StackString> for &'a str {
+    fn from(item: &StackString) -> &str {
+        item.as_str()
+    }
+}
+
 impl Borrow<str> for StackString {
     fn borrow(&self) -> &str {
         self.0.borrow()
@@ -269,5 +275,11 @@ mod tests {
     fn test_contains_char() {
         let a: StackString = "hey there".into();
         assert!(a.contains(' '));
+    }
+
+    #[test]
+    fn test_equality() {
+        let s: StackString = "hey".into();
+        assert_eq!(Some(&s).map(Into::into), Some("hey"));
     }
 }
