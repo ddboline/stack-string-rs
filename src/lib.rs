@@ -274,7 +274,111 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::{thread_rng, Rng};
+
     use crate::StackString;
+
+    #[test]
+    fn test_default() {
+        assert_eq!(StackString::new(), StackString::default());
+    }
+
+    #[test]
+    fn test_split_off() {
+        let mut s0 = "hello there".to_string();
+        let s1 = s0.split_off(3);
+        let mut s2: StackString = "hello there".into();
+        let s3 = s2.split_off(3);
+        assert_eq!(s0.as_str(), s2.as_str());
+        assert_eq!(s1.as_str(), s3.as_str());
+    }
+
+    #[test]
+    fn test_from_utf8() {
+        let mut rng = thread_rng();
+        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let s0 = String::from_utf8(v.clone()).unwrap();
+        let s1 = StackString::from_utf8(v).unwrap();
+        assert_eq!(s0.as_str(), s1.as_str());
+
+        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let s0 = String::from_utf8(v.clone());
+        let s1 = StackString::from_utf8(v);
+
+        match s0 {
+            Ok(s) => assert_eq!(s.as_str(), s1.unwrap().as_str()),
+            Err(e) => assert_eq!(e, s1.unwrap_err()),
+        }
+    }
+
+    #[test]
+    fn test_string_from_stackstring() {
+        let s0 = StackString::from("Hello there");
+        let s1: String = s0.clone().into();
+        assert_eq!(s0.as_str(), s1.as_str());
+    }
+
+    #[test]
+    fn test_stackstring_from_string() {
+        let s0 = String::from("Hello there");
+        let s1: StackString = s0.clone().into();
+        assert_eq!(s0.as_str(), s1.as_str());
+        let s1: StackString = (&s0).into();
+        assert_eq!(s0.as_str(), s1.as_str());
+    }
+
+    #[test]
+    fn test_borrow() {
+        use std::borrow::Borrow;
+        let s = StackString::from("Hello");
+        let st: &str = s.borrow();
+        assert_eq!(st, "Hello");
+    }
+
+    #[test]
+    fn test_as_ref() {
+        use std::path::Path;
+
+        let s = StackString::from("Hello");
+        let st: &str = s.as_ref();
+        assert_eq!(st, s.as_str());
+        let bt: &[u8] = s.as_ref();
+        assert_eq!(bt, s.as_bytes());
+        let pt: &Path = s.as_ref();
+        assert_eq!(pt, Path::new("Hello"));
+    }
+
+    #[test]
+    fn test_from_str() {
+        let s = StackString::from("Hello");
+        let st: StackString = "Hello".parse().unwrap();
+        assert_eq!(s, st);
+    }
+
+    #[test]
+    fn test_partialeq_cow() {
+        use std::path::Path;
+        let p = Path::new("Hello");
+        let ps = p.to_string_lossy();
+        let s = StackString::from("Hello");
+        assert_eq!(s, ps);
+    }
+
+    #[test]
+    fn test_partial_eq_string() {
+        assert_eq!(StackString::from("Hello"), String::from("Hello"));
+        assert_eq!(StackString::from("Hello"), "Hello");
+        assert_eq!(&StackString::from("Hello"), "Hello");
+    }
+
+    #[test]
+    fn test_from_iterator_char() {
+        let mut rng = thread_rng();
+        let v: Vec<char> = (0..20).map(|_| rng.gen::<char>()).collect();
+        let s0: StackString = v.iter().map(|x| *x).collect();
+        let s1: String = v.iter().map(|x| *x).collect();
+        assert_eq!(s0, s1);
+    }
 
     #[test]
     fn test_contains_stackstring() {
