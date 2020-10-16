@@ -40,7 +40,7 @@ use std::io::Write;
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
-use tokio_postgres::types::{FromSql, IsNull, ToSql, Type};
+use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "diesel_types")]
 #[derive(
