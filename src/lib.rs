@@ -14,10 +14,10 @@
 #[macro_use]
 extern crate diesel;
 
-use std::convert::Infallible;
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
 use serde::{Deserialize, Serialize};
 use smartstring::alias::String as SmartString;
+use std::convert::Infallible;
 use std::{
     borrow::{Borrow, Cow},
     iter::FromIterator,
@@ -397,5 +397,35 @@ mod tests {
     fn test_equality() {
         let s: StackString = "hey".into();
         assert_eq!(Some(&s).map(Into::into), Some("hey"));
+    }
+
+    #[cfg(feature = "postgres_types")]
+    use bytes::BytesMut;
+    #[cfg(feature = "postgres_types")]
+    use postgres_types::{FromSql, IsNull, ToSql, Type};
+
+    #[cfg(feature = "postgres_types")]
+    #[test]
+    fn test_from_sql() {
+        let raw = b"Hello There";
+        let t = Type::TEXT;
+        let s = StackString::from_sql(&t, raw).unwrap();
+        assert_eq!(s, StackString::from("Hello There"));
+
+        assert!(<StackString as FromSql>::accepts(&t));
+    }
+
+    #[cfg(feature = "postgres_types")]
+    #[test]
+    fn test_to_sql() {
+        let s = StackString::from("Hello There");
+        let t = Type::TEXT;
+        assert!(<StackString as ToSql>::accepts(&t));
+        let mut buf = BytesMut::new();
+        match s.to_sql(&t, &mut buf).unwrap() {
+            IsNull::Yes => assert!(false),
+            IsNull::No => {}
+        }
+        assert_eq!(buf.as_ref(), b"Hello There");
     }
 }
