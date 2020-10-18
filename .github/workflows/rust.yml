@@ -28,7 +28,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cargo test --verbose && \
+        cargo test --verbose --all-features --workspace && \
         cargo install cargo-tarpaulin && \
         cargo tarpaulin --verbose --all-features --workspace --out Xml
 
