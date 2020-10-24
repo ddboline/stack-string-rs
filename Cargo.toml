@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -12,7 +12,7 @@ derive_more = "0.99"
 smartstring = {version="0.2", features=["serde"]}
 diesel = {version="1.4", features=["postgres"], optional=true}
 postgres-types = {version="0.1", optional=true}
-bytes = {version="0.5", optional=true}
+bytes = {version="0.6", optional=true}
 
 [dev-dependencies]
 rand = "0.7"
