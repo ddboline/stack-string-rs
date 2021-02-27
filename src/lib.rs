@@ -42,8 +42,8 @@ use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
-#[cfg(features = "rweb-openapi")]
-use rweb::Entity;
+#[cfg(feature = "rweb-openapi")]
+use rweb::openapi::{Entity, Schema};
 
 #[cfg(feature = "diesel_types")]
 #[derive(
@@ -275,7 +275,7 @@ where
     }
 }
 
-#[cfg(features = "rweb-openapi")]
+#[cfg(feature = "rweb-openapi")]
 impl Entity for StackString {
     #[inline]
     fn describe() -> Schema {
@@ -440,12 +440,11 @@ mod tests {
         assert_eq!(buf.as_ref(), b"Hello There");
     }
 
-    #[cfg(features = "rweb-openapi")]
+    #[cfg(feature = "rweb-openapi")]
     #[test]
     fn test_entity() {
-        use rweb::Entity;
+        use rweb::openapi::Entity;
 
-        let s = StackString::from("Hello There");
-        assert_eq!(s.as_str().describe(), s.describe());
+        assert_eq!(str::describe(), StackString::describe());
     }
 }
