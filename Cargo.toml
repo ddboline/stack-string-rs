@@ -3,6 +3,11 @@ name = "stack-string"
 version = "0.2.2"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
+description = "A wrapper around SmartString which adds support for various extensions"
+license-file = "LICENSE"
+homepage = "https://github.com/ddboline/stack-string-rs"
+repository = "https://github.com/ddboline/stack-string-rs"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
