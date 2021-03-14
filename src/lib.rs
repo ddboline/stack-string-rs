@@ -45,7 +45,6 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 #[cfg(feature = "rweb-openapi")]
 use rweb::openapi::{Entity, Schema};
 
-#[cfg(feature = "diesel_types")]
 #[derive(
     Display,
     Serialize,
@@ -64,32 +63,9 @@ use rweb::openapi::{Entity, Schema};
     Default,
     PartialOrd,
     Ord,
-    FromSqlRow,
-    AsExpression,
 )]
-#[sql_type = "Text"]
-pub struct StackString(SmartString);
-
-#[cfg(not(feature = "diesel_types"))]
-#[derive(
-    Display,
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Into,
-    From,
-    PartialEq,
-    Eq,
-    Hash,
-    Default,
-    PartialOrd,
-    Ord,
-    Deref,
-    DerefMut,
-    Index,
-    IndexMut,
-)]
+#[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
+#[cfg_attr(feature = "diesel_types", sql_type = "Text")]
 pub struct StackString(SmartString);
 
 impl StackString {
