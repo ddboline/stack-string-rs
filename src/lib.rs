@@ -25,6 +25,7 @@ use std::{
     str::FromStr,
     string::FromUtf8Error,
 };
+use hyper::Body;
 
 #[cfg(feature = "diesel_types")]
 use diesel::{
@@ -256,6 +257,14 @@ impl Entity for StackString {
     #[inline]
     fn describe() -> Schema {
         str::describe()
+    }
+}
+
+impl From<StackString> for Body {
+    #[inline]
+    fn from(s: StackString) -> Body {
+        let s: String = s.into();
+        Body::from(s)
     }
 }
 
