@@ -15,6 +15,7 @@
 extern crate diesel;
 
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
+use hyper::Body;
 use serde::{Deserialize, Serialize};
 use smartstring::alias::String as SmartString;
 use std::convert::Infallible;
@@ -25,7 +26,6 @@ use std::{
     str::FromStr,
     string::FromUtf8Error,
 };
-use hyper::Body;
 
 #[cfg(feature = "diesel_types")]
 use diesel::{
@@ -44,7 +44,7 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "rweb-openapi")]
-use rweb::openapi::{Entity, Schema};
+use rweb::openapi::{Entity, ResponseEntity, Responses, Schema};
 
 #[derive(
     Display,
@@ -257,6 +257,14 @@ impl Entity for StackString {
     #[inline]
     fn describe() -> Schema {
         str::describe()
+    }
+}
+
+#[cfg(feature = "rweb-openapi")]
+impl ResponseEntity for StackString {
+    #[inline]
+    fn describe_responses() -> Responses {
+        String::describe_responses()
     }
 }
 
