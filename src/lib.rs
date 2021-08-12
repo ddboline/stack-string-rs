@@ -44,7 +44,9 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "rweb-openapi")]
-use rweb::openapi::{Entity, ResponseEntity, Responses, Schema};
+use rweb::openapi::{
+    ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
+};
 
 #[derive(
     Display,
@@ -254,17 +256,21 @@ where
 
 #[cfg(feature = "rweb-openapi")]
 impl Entity for StackString {
+    fn type_name() -> Cow<'static, str> {
+        str::type_name()
+    }
+
     #[inline]
-    fn describe() -> Schema {
-        str::describe()
+    fn describe(comp_d: &mut ComponentDescriptor) -> ComponentOrInlineSchema {
+        str::describe(comp_d)
     }
 }
 
 #[cfg(feature = "rweb-openapi")]
 impl ResponseEntity for StackString {
     #[inline]
-    fn describe_responses() -> Responses {
-        String::describe_responses()
+    fn describe_responses(comp_d: &mut ComponentDescriptor) -> Responses {
+        String::describe_responses(comp_d)
     }
 }
 
@@ -431,13 +437,5 @@ mod tests {
             IsNull::No => {}
         }
         assert_eq!(buf.as_ref(), b"Hello There");
-    }
-
-    #[cfg(feature = "rweb-openapi")]
-    #[test]
-    fn test_entity() {
-        use rweb::openapi::Entity;
-
-        assert_eq!(str::describe(), StackString::describe());
     }
 }
