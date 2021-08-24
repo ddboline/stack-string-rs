@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_smartstring_validate() {
-       smartstring::validate()
+       smartstring::validate();
     }
 
     #[test]
