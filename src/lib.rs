@@ -167,7 +167,7 @@ impl<'a> PartialEq<String> for StackString {
 impl<'a> PartialEq<str> for StackString {
     #[inline]
     fn eq(&self, other: &str) -> bool {
-        PartialEq::eq(&self[..], &other[..])
+        PartialEq::eq(&self[..], other)
     }
 }
 
@@ -287,6 +287,11 @@ mod tests {
     use rand::{thread_rng, Rng};
 
     use crate::StackString;
+
+    #[test]
+    fn test_smartstring_validate() {
+       smartstring::validate();
+    }
 
     #[test]
     fn test_default() {
