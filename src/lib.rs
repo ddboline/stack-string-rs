@@ -282,6 +282,32 @@ impl From<StackString> for Body {
     }
 }
 
+#[cfg(feature = "sqlx_types")]
+impl sqlx_core::encode::Encode<'_, sqlx_core::postgres::Postgres> for StackString {
+    fn encode_by_ref(&self, buf: &mut sqlx_core::postgres::PgArgumentBuffer) -> sqlx_core::encode::IsNull {
+        <&str as sqlx_core::encode::Encode<sqlx_core::postgres::Postgres>>::encode(&**self, buf)
+    }
+}
+
+#[cfg(feature = "sqlx_types")]
+impl sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackString {
+    fn type_info() -> sqlx_core::postgres::PgTypeInfo {
+        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::type_info()
+    }
+
+    fn compatible(ty: &sqlx_core::postgres::PgTypeInfo) -> bool {
+        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::compatible(ty)
+    }
+}
+
+#[cfg(feature = "sqlx_types")]
+impl sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackString {
+    fn decode(value: sqlx_core::postgres::PgValueRef<'_>) -> Result<Self, sqlx_core::error::BoxDynError> {
+        <&str as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use rand::{thread_rng, Rng};
