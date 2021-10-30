@@ -301,9 +301,9 @@ impl sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackString {
 }
 
 #[cfg(feature = "sqlx_types")]
-impl sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackString {
-    fn decode(value: sqlx_core::postgres::PgValueRef<'_>) -> Result<Self, sqlx_core::error::BoxDynError> {
-        <&str as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
+impl<'r> sqlx_core::decode::Decode<'r, sqlx_core::postgres::Postgres> for StackString {
+    fn decode(value: sqlx_core::postgres::PgValueRef<'r>) -> Result<Self, sqlx_core::error::BoxDynError> {
+        <String as sqlx_core::decode::Decode<'r, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
     }
 }
 
