@@ -87,6 +87,13 @@ impl StackString {
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }
+
+    pub fn from_utf8_lossy(v: &[u8]) -> StackString {
+        match String::from_utf8_lossy(v) {
+            Cow::Borrowed(s) => s.into(),
+            Cow::Owned(s) => s.into(),
+        }
+    }
 }
 
 impl From<StackString> for String {
@@ -301,12 +308,11 @@ impl sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackString {
 }
 
 #[cfg(feature = "sqlx_types")]
-impl sqlx_core::decode::Decode<'static, sqlx_core::postgres::Postgres> for StackString {
-    fn decode(value: sqlx_core::postgres::PgValueRef<'static>) -> Result<Self, sqlx_core::error::BoxDynError> {
-        <String as sqlx_core::decode::Decode<'static, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
+impl sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackString {
+    fn decode(value: sqlx_core::postgres::PgValueRef<'_>) -> Result<Self, sqlx_core::error::BoxDynError> {
+        <String as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
