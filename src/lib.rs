@@ -102,6 +102,12 @@ impl From<StackString> for String {
     }
 }
 
+impl From<&StackString> for String {
+    fn from(item: &StackString) -> Self {
+        item.as_str().into()
+    }
+}
+
 impl From<&StackString> for StackString {
     fn from(item: &StackString) -> Self {
         item.clone()
