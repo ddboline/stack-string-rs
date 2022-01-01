@@ -21,6 +21,7 @@ use smartstring::alias::String as SmartString;
 use std::{
     borrow::{Borrow, Cow},
     convert::Infallible,
+    ffi::OsStr,
     fmt::{self, Error as FmtError, Write as FmtWrite},
     iter::FromIterator,
     path::Path,
@@ -166,6 +167,12 @@ impl AsRef<[u8]> for StackString {
 impl AsRef<Path> for StackString {
     fn as_ref(&self) -> &Path {
         Path::new(self.0.as_str())
+    }
+}
+
+impl AsRef<OsStr> for StackString {
+    fn as_ref(&self) -> &OsStr {
+        self.as_str().as_ref()
     }
 }
 
