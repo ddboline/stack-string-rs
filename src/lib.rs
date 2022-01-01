@@ -18,14 +18,14 @@ use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
 use hyper::Body;
 use serde::{Deserialize, Serialize};
 use smartstring::alias::String as SmartString;
-use std::convert::Infallible;
 use std::{
     borrow::{Borrow, Cow},
+    convert::Infallible,
+    fmt::{self, Error as FmtError, Write as FmtWrite},
     iter::FromIterator,
     path::Path,
     str::FromStr,
     string::FromUtf8Error,
-    fmt::{self, Write as FmtWrite, Error as FmtError},
 };
 
 #[cfg(feature = "diesel_types")]
@@ -310,7 +310,10 @@ impl From<StackString> for Body {
 
 #[cfg(feature = "sqlx_types")]
 impl sqlx_core::encode::Encode<'_, sqlx_core::postgres::Postgres> for StackString {
-    fn encode_by_ref(&self, buf: &mut sqlx_core::postgres::PgArgumentBuffer) -> sqlx_core::encode::IsNull {
+    fn encode_by_ref(
+        &self,
+        buf: &mut sqlx_core::postgres::PgArgumentBuffer,
+    ) -> sqlx_core::encode::IsNull {
         <&str as sqlx_core::encode::Encode<sqlx_core::postgres::Postgres>>::encode(&**self, buf)
     }
 }
@@ -328,8 +331,11 @@ impl sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackString {
 
 #[cfg(feature = "sqlx_types")]
 impl sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackString {
-    fn decode(value: sqlx_core::postgres::PgValueRef<'_>) -> Result<Self, sqlx_core::error::BoxDynError> {
-        <String as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value).map(|s| s.into())
+    fn decode(
+        value: sqlx_core::postgres::PgValueRef<'_>,
+    ) -> Result<Self, sqlx_core::error::BoxDynError> {
+        <String as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value)
+            .map(|s| s.into())
     }
 }
 
@@ -341,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_smartstring_validate() {
-       smartstring::validate();
+        smartstring::validate();
     }
 
     #[test]
