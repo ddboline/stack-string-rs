@@ -25,6 +25,7 @@ use std::{
     path::Path,
     str::FromStr,
     string::FromUtf8Error,
+    fmt::{self, Write as FmtWrite, Error as FmtError},
 };
 
 #[cfg(feature = "diesel_types")]
@@ -93,6 +94,12 @@ impl StackString {
             Cow::Borrowed(s) => s.into(),
             Cow::Owned(s) => s.into(),
         }
+    }
+
+    pub fn from_display(buf: impl fmt::Display) -> Result<Self, FmtError> {
+        let mut s = Self::new();
+        write!(s, "{}", buf)?;
+        Ok(s)
     }
 }
 
