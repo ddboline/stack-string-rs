@@ -28,6 +28,7 @@ use std::{
     str::FromStr,
     string::FromUtf8Error,
 };
+pub use smartstring::MAX_INLINE;
 
 #[cfg(feature = "diesel_types")]
 use diesel::{
