@@ -98,8 +98,8 @@ impl StackString {
     }
 
     /// # Panics
-    /// from_display panics if a formatting trait implementation returns an error.
-    /// This indicates an incorrect implementation
+    /// from_display panics if a formatting trait implementation returns an
+    /// error. This indicates an incorrect implementation
     /// since `fmt::Write for String` never returns an error itself.
     pub fn from_display(buf: impl fmt::Display) -> Self {
         let mut s = Self::new();
@@ -533,15 +533,15 @@ mod tests {
             }
         }
 
-        let t = Test{};
+        let t = Test {};
         let s = StackString::from_display(t);
         assert_eq!(s, StackString::from("THIS IS A TEST"));
     }
 
     #[test]
     fn test_format_sstr() {
-        use std::fmt::Write;
         use crate::format_sstr;
+        use std::fmt::Write;
 
         let s = format_sstr!("This is a test {}", 22);
         assert_eq!(s, StackString::from("This is a test 22"));
