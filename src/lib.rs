@@ -99,7 +99,7 @@ impl StackString {
     }
 
     /// # Panics
-    /// from_display panics if a formatting trait implementation returns an
+    /// `from_display` panics if a formatting trait implementation returns an
     /// error. This indicates an incorrect implementation
     /// since `fmt::Write for String` never returns an error itself.
     pub fn from_display(buf: impl fmt::Display) -> Self {
