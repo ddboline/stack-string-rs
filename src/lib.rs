@@ -15,9 +15,9 @@
 extern crate diesel;
 
 pub mod stack_string;
-// #[cfg(features = "stack-cow")]
+#[cfg(features = "stack-cow")]
 pub mod stack_cow;
 
 pub use crate::stack_string::StackString;
-// #[cfg(features = "stack-cow")]
+#[cfg(features = "stack-cow")]
 pub use crate::stack_cow::StackCow;
