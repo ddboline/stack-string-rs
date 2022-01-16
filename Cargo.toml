@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "0.5.2"
+version = "0.5.3"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -27,7 +27,7 @@ smartcow = {version="0.1", optional=true}
 rand = "0.8"
 
 [features]
-default = ["stack-cow"]
+default = []
 
 diesel_types = ["diesel"]
 postgres_types = ["postgres-types", "bytes"]
