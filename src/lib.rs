@@ -21,3 +21,5 @@ pub mod stack_cow;
 pub use crate::stack_string::StackString;
 #[cfg(features = "stack-cow")]
 pub use crate::stack_cow::StackCow;
+
+pub use smartstring::MAX_INLINE;

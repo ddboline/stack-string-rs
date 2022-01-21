@@ -13,7 +13,8 @@ use std::{
     str::FromStr,
     string::FromUtf8Error,
 };
-pub use smartstring::MAX_INLINE;
+
+use crate::MAX_INLINE;
 
 use crate::stack_string::StackString;
 
