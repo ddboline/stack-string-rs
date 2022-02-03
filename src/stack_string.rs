@@ -179,6 +179,13 @@ impl<'a> From<Cow<'a, str>> for StackString {
     }
 }
 
+impl From<StackString> for Cow<'_, str> {
+    fn from(item: StackString) -> Self {
+        let s: String = item.into();
+        Cow::Owned(s)
+    }
+}
+
 impl Borrow<str> for StackString {
     fn borrow(&self) -> &str {
         self.0.borrow()
