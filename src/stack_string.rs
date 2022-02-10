@@ -119,7 +119,7 @@ impl StackString {
                     }
                 }
             }
-            buf.into()
+            buf
         }
     }
 
