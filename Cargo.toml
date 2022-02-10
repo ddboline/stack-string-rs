@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "0.5.6"
+version = "0.6.0"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -22,6 +22,7 @@ rweb = {version="0.15", features=["openapi"], optional=true}
 hyper = "0.14"
 sqlx-core = {version="0.5", features=["runtime-tokio-rustls","postgres"], optional=true, default-features=false}
 smartcow = {version="0.1", optional=true}
+arrayvec = {version="0.7", optional=true}
 
 [dev-dependencies]
 rand = "0.8"
@@ -34,3 +35,4 @@ postgres_types = ["postgres-types", "bytes"]
 rweb-openapi = ["rweb"]
 sqlx_types = ["sqlx-core"]
 stack-cow = ["smartcow"]
+small-string = ["arrayvec"]

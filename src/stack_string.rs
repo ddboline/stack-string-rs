@@ -3,13 +3,15 @@ use hyper::Body;
 use serde::{Deserialize, Serialize};
 use smartstring::alias::String as SmartString;
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::{Borrow, BorrowMut, Cow},
     convert::Infallible,
     ffi::OsStr,
     fmt::{self, Write as FmtWrite},
     iter::FromIterator,
     path::Path,
+    str,
     str::FromStr,
+    str::Utf8Error,
     string::FromUtf8Error,
 };
 
@@ -72,7 +74,11 @@ impl StackString {
         Self(self.0.split_off(index))
     }
 
-    pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
+    pub fn from_utf8(v: &[u8]) -> Result<Self, Utf8Error> {
+        str::from_utf8(v).map(Into::into)
+    }
+
+    pub fn from_utf8_vec(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }
 
@@ -83,32 +89,32 @@ impl StackString {
                 Cow::Owned(s) => s.into(),
             }
         } else {
-            let (v, up_to, error_len) = match std::str::from_utf8(v) {
+            let (v, up_to, error_len) = match str::from_utf8(v) {
                 Ok(s) => return s.into(),
                 Err(error) => (v, error.valid_up_to(), error.error_len()),
             };
             let mut buf = StackString::new();
             let (valid, after_valid) = v.split_at(up_to);
-            buf.push_str(unsafe {std::str::from_utf8_unchecked(valid)});
+            buf.push_str(unsafe { str::from_utf8_unchecked(valid) });
             buf.push('\u{FFFD}');
             let mut input = after_valid;
             if let Some(invalid_sequence_length) = error_len {
                 input = &after_valid[invalid_sequence_length..];
             }
             loop {
-                match std::str::from_utf8(input) {
+                match str::from_utf8(input) {
                     Ok(s) => {
                         buf.push_str(s);
-                        break
-                    },
+                        break;
+                    }
                     Err(error) => {
                         let (valid, after_valid) = input.split_at(error.valid_up_to());
-                        buf.push_str(unsafe {std::str::from_utf8_unchecked(valid)});
+                        buf.push_str(unsafe { str::from_utf8_unchecked(valid) });
                         buf.push('\u{FFFD}');
                         if let Some(invalid_sequence_length) = error.error_len() {
                             input = &after_valid[invalid_sequence_length..];
                         } else {
-                            break
+                            break;
                         }
                     }
                 }
@@ -181,14 +187,19 @@ impl<'a> From<Cow<'a, str>> for StackString {
 
 impl From<StackString> for Cow<'_, str> {
     fn from(item: StackString) -> Self {
-        let s: String = item.into();
-        Cow::Owned(s)
+        Cow::Owned(item.into())
     }
 }
 
 impl Borrow<str> for StackString {
     fn borrow(&self) -> &str {
         self.0.borrow()
+    }
+}
+
+impl BorrowMut<str> for StackString {
+    fn borrow_mut(&mut self) -> &mut str {
+        self.0.borrow_mut()
     }
 }
 
@@ -425,12 +436,30 @@ mod tests {
         let mut rng = thread_rng();
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
-        let s1 = StackString::from_utf8(v).unwrap();
+        let s1 = StackString::from_utf8(&v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
-        let s1 = StackString::from_utf8(v);
+        let s1 = StackString::from_utf8(&v);
+
+        match s0 {
+            Ok(s) => assert_eq!(s.as_str(), s1.unwrap().as_str()),
+            Err(e) => assert_eq!(e.utf8_error(), s1.unwrap_err()),
+        }
+    }
+
+    #[test]
+    fn test_from_utf8_vec() {
+        let mut rng = thread_rng();
+        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let s0 = String::from_utf8(v.clone()).unwrap();
+        let s1 = StackString::from_utf8_vec(v).unwrap();
+        assert_eq!(s0.as_str(), s1.as_str());
+
+        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let s0 = String::from_utf8(v.clone());
+        let s1 = StackString::from_utf8_vec(v);
 
         match s0 {
             Ok(s) => assert_eq!(s.as_str(), s1.unwrap().as_str()),
