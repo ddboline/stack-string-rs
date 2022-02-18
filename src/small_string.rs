@@ -159,6 +159,7 @@ impl<const CAP: usize> SmallString<CAP> {
     /// it from the original.
     ///
     /// If the index doesn't fall on a UTF-8 character boundary, this method panics.
+    #[allow(clippy::missing_panics_doc)]
     pub fn split_off(&mut self, index: usize) -> Self {
         match self {
             Self::Boxed(s) => s.split_off(index).into(),
