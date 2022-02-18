@@ -15,13 +15,10 @@
 #[macro_use]
 extern crate diesel;
 
-pub mod stack_string;
-pub mod stack_cow;
 pub mod small_string;
+pub mod stack_cow;
+pub mod stack_string;
 
-pub use crate::stack_string::StackString;
-pub use crate::small_string::SmallString;
-pub use crate::stack_cow::StackCow;
-
+pub use crate::{small_string::SmallString, stack_cow::StackCow, stack_string::StackString};
 
 pub use smartstring::MAX_INLINE;

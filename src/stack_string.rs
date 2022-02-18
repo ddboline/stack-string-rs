@@ -9,8 +9,7 @@ use std::{
     iter::FromIterator,
     path::Path,
     str,
-    str::FromStr,
-    str::Utf8Error,
+    str::{FromStr, Utf8Error},
     string::FromUtf8Error,
 };
 
