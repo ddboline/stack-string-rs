@@ -7,11 +7,13 @@ use serde::{
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     convert::Infallible,
+    ffi::OsStr,
     fmt,
     fmt::Write as FmtWrite,
     iter::FromIterator,
     mem,
     ops::{Deref, DerefMut},
+    path::Path,
     str,
     str::{FromStr, Utf8Error},
     string::FromUtf8Error,
@@ -352,6 +354,30 @@ impl<const CAP: usize> fmt::Write for SmallString<CAP> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.push_str(s);
         Ok(())
+    }
+}
+
+impl<const CAP: usize> AsRef<str> for SmallString<CAP> {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl<const CAP: usize> AsRef<[u8]> for SmallString<CAP> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_str().as_ref()
+    }
+}
+
+impl<const CAP: usize> AsRef<OsStr> for SmallString<CAP> {
+    fn as_ref(&self) -> &OsStr {
+        self.as_str().as_ref()
+    }
+}
+
+impl<const CAP: usize> AsRef<Path> for SmallString<CAP> {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
     }
 }
 
