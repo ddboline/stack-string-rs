@@ -81,12 +81,15 @@ impl<const CAP: usize> SmallString<CAP> {
             .map(|s| ArrayString::from(s).map_or_else(|_| Self::Boxed(s.into()), Self::Inline))
     }
 
+    #[allow(clippy::missing_panics_doc)]
     pub fn from_utf8_vec(v: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(v).map(|s| {
             if s.len() > CAP {
                 Self::Boxed(s)
             } else {
-                Self::Inline(ArrayString::from(s.as_str()).unwrap())
+                let mut astr = ArrayString::new();
+                astr.push_str(s.as_str());
+                Self::Inline(astr)
             }
         })
     }
@@ -150,6 +153,12 @@ impl<const CAP: usize> SmallString<CAP> {
         }
     }
 
+    /// Split the string into two at the given index.
+    ///
+    /// Returns the content to the right of the index as a new string, and removes
+    /// it from the original.
+    ///
+    /// If the index doesn't fall on a UTF-8 character boundary, this method panics.
     pub fn split_off(&mut self, index: usize) -> Self {
         match self {
             Self::Boxed(s) => s.split_off(index).into(),
@@ -419,7 +428,7 @@ impl<const CAP: usize> From<SmallString<CAP>> for Body {
 
 impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
-        let mut iter = iter.into_iter();
+        let iter = iter.into_iter();
         let (min, max) = iter.size_hint();
         let size = if let Some(x) = max { x } else { min };
         let mut s = if size > CAP {
@@ -427,7 +436,7 @@ impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
         } else {
             Self::Inline(ArrayString::<CAP>::new())
         };
-        while let Some(c) = iter.next() {
+        for c in iter {
             s.write_char(c).unwrap();
         }
         s

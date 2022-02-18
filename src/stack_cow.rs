@@ -119,7 +119,7 @@ impl<'a> Ord for StackCow<'a> {
     }
 }
 
-pub fn serialize<'a, S>(s: &SmartCow<'a>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(s: &SmartCow<'_>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
