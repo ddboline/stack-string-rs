@@ -1,5 +1,9 @@
 use arrayvec::ArrayString;
-use serde::{Deserialize, Serialize, Serializer};
+use core::marker::PhantomData;
+use serde::{
+    de::{Error, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     convert::Infallible,
@@ -28,8 +32,7 @@ use hyper::Body;
 
 use crate::{StackString, MAX_INLINE};
 
-#[derive(Clone, Deserialize, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(from = "&str")]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SmallString<const CAP: usize> {
     Inline(ArrayString<CAP>),
     Boxed(String),
@@ -155,10 +158,11 @@ impl<const CAP: usize> SmallString<CAP> {
 
     /// Split the string into two at the given index.
     ///
-    /// Returns the content to the right of the index as a new string, and removes
-    /// it from the original.
+    /// Returns the content to the right of the index as a new string, and
+    /// removes it from the original.
     ///
-    /// If the index doesn't fall on a UTF-8 character boundary, this method panics.
+    /// If the index doesn't fall on a UTF-8 character boundary, this method
+    /// panics.
     #[allow(clippy::missing_panics_doc)]
     pub fn split_off(&mut self, index: usize) -> Self {
         match self {
@@ -196,6 +200,41 @@ impl<const CAP: usize> Serialize for SmallString<CAP> {
         S: Serializer,
     {
         serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de, const CAP: usize> Deserialize<'de> for SmallString<CAP> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer
+            .deserialize_string(SmartStringVisitor(PhantomData))
+            .map(SmallString::from)
+    }
+}
+
+struct SmartStringVisitor<const CAP: usize>(PhantomData<*const SmallString<CAP>>);
+
+impl<'de, const CAP: usize> Visitor<'de> for SmartStringVisitor<CAP> {
+    type Value = SmallString<CAP>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a string")
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        Ok(SmallString::from(v))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        Ok(SmallString::from(v))
     }
 }
 
