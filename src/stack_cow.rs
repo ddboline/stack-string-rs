@@ -1,7 +1,6 @@
-use smartcow::SmartCow;
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
-use hyper::Body;
-use serde::{self, Serialize, Deserialize, Deserializer, Serializer};
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use smartcow::SmartCow;
 use smartstring::alias::String as SmartString;
 use std::{
     borrow::{Borrow, Cow},
@@ -39,6 +38,9 @@ use rweb::openapi::{
     ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
 };
 
+#[cfg(feature = "rweb-openapi")]
+use hyper::Body;
+
 #[derive(
     Display,
     Serialize,
@@ -59,8 +61,7 @@ use rweb::openapi::{
 #[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
 #[cfg_attr(feature = "diesel_types", sql_type = "Text")]
 pub struct StackCow<'a>(
-    #[serde(serialize_with = "serialize", deserialize_with = "deserialize")]
-    SmartCow<'a>
+    #[serde(serialize_with = "serialize", deserialize_with = "deserialize")] SmartCow<'a>,
 );
 
 impl<'a> StackCow<'a> {
@@ -72,7 +73,7 @@ impl<'a> StackCow<'a> {
         match self.0 {
             SmartCow::Borrowed(_) => true,
             SmartCow::Owned(_) => false,
-        }        
+        }
     }
 
     pub fn is_owned(&self) -> bool {
@@ -118,14 +119,16 @@ impl<'a> Ord for StackCow<'a> {
     }
 }
 
-pub fn serialize<'a, S>(s: &SmartCow<'a>, serializer: S) -> Result<S::Ok, S::Error>
-where S: Serializer,
+pub fn serialize<S>(s: &SmartCow<'_>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
 {
     serializer.serialize_str(s.as_ref())
 }
 
 pub fn deserialize<'de, D>(deserializer: D) -> Result<SmartCow<'static>, D::Error>
-where D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     SmartString::deserialize(deserializer).map(Into::into)
 }
@@ -363,6 +366,7 @@ impl<'a> ResponseEntity for StackCow<'a> {
     }
 }
 
+#[cfg(feature = "rweb-openapi")]
 impl<'a> From<StackCow<'a>> for Body {
     #[inline]
     fn from(s: StackCow) -> Body {
@@ -406,8 +410,7 @@ impl<'a> sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackC
 mod tests {
     use rand::{thread_rng, Rng};
 
-    use crate::StackString;
-    use crate::StackCow;
+    use crate::{StackCow, StackString};
 
     #[test]
     fn test_smartstring_validate() {
