@@ -21,18 +21,15 @@ bytes = {version="1.0", optional=true}
 rweb = {version="0.15", features=["openapi"], optional=true}
 hyper = "0.14"
 sqlx-core = {version="0.5", features=["runtime-tokio-rustls","postgres"], optional=true, default-features=false}
-smartcow = {version="0.1", optional=true}
-arrayvec = {version="0.7", optional=true}
+smartcow = {version="0.1"}
+arrayvec = {version="0.7"}
 
 [dev-dependencies]
 rand = "0.8"
 
 [features]
 default = []
-
 diesel_types = ["diesel"]
 postgres_types = ["postgres-types", "bytes"]
 rweb-openapi = ["rweb"]
 sqlx_types = ["sqlx-core"]
-stack-cow = ["smartcow"]
-small-string = ["arrayvec"]
