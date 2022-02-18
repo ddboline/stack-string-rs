@@ -240,7 +240,11 @@ impl<'de, const CAP: usize> Visitor<'de> for SmartStringVisitor<CAP> {
 
 impl<const CAP: usize> From<String> for SmallString<CAP> {
     fn from(item: String) -> Self {
-        Self::Boxed(item)
+        if item.len() > CAP {
+            Self::Boxed(item)
+        } else {
+            SmallString::from(item.as_str())
+        }
     }
 }
 
