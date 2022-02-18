@@ -313,6 +313,12 @@ impl<const CAP: usize> From<StackString> for SmallString<CAP> {
     }
 }
 
+impl<const CAP: usize> From<&StackString> for SmallString<CAP> {
+    fn from(item: &StackString) -> Self {
+        SmallString::from(item.as_str())
+    }
+}
+
 impl<const CAP: usize> From<SmallString<CAP>> for StackString {
     fn from(item: SmallString<CAP>) -> Self {
         if item.len() > MAX_INLINE {
