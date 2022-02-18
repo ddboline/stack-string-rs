@@ -188,6 +188,17 @@ impl<const CAP: usize> SmallString<CAP> {
         write!(s, "{buf}").unwrap();
         s
     }
+
+    pub fn into_smallstring<const CAP1: usize>(self) -> SmallString<CAP1> {
+        if self.len() > CAP1 {
+            match self {
+                SmallString::Boxed(s) => SmallString::Boxed(s),
+                SmallString::Inline(s) => s.as_str().into(),
+            }
+        } else {
+            self.as_str().into()
+        }
+    }
 }
 
 impl<const CAP: usize> From<&str> for SmallString<CAP> {
@@ -521,14 +532,28 @@ impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
 
 #[cfg(test)]
 mod tests {
+    use arrayvec::ArrayString;
     use rand::{thread_rng, Rng};
     use std::fmt::Write;
 
-    use crate::small_string::SmallString;
+    use crate::{small_string::SmallString, stack_string::StackString};
 
     #[test]
     fn test_default() {
         assert_eq!(SmallString::<1>::new(), SmallString::<1>::default());
+    }
+
+    #[test]
+    fn test_sizeof() {
+        if std::mem::size_of::<String>() == 24 {
+            assert_eq!(std::mem::size_of::<StackString>(), 24);
+            assert_eq!(std::mem::size_of::<SmallString<32>>(), 40);
+            assert_eq!(std::mem::size_of::<SmallString<30>>(), 40);
+            assert_eq!(std::mem::size_of::<ArrayString<32>>(), 36);
+            assert_eq!(std::mem::size_of::<[u8; 32]>(), 32);
+        } else {
+            assert!(false);
+        }
     }
 
     #[test]
@@ -706,6 +731,17 @@ mod tests {
         let mut s = SmallString::<5>::new();
         write!(&mut s, "123456789").unwrap();
         assert_eq!(s.as_str(), "123456789");
+        assert!(s.is_boxed());
+    }
+
+    #[test]
+    fn test_into_smallstring() {
+        let mut s = SmallString::<10>::new();
+        write!(&mut s, "123456789").unwrap();
+        assert!(s.is_inline());
+        let s = s.into_smallstring::<20>();
+        assert!(s.is_inline());
+        let s = s.into_smallstring::<5>();
         assert!(s.is_boxed());
     }
 }
