@@ -1,5 +1,4 @@
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
-use hyper::Body;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use smartcow::SmartCow;
 use smartstring::alias::String as SmartString;
@@ -38,6 +37,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 use rweb::openapi::{
     ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
 };
+
+#[cfg(feature = "rweb-openapi")]
+use hyper::Body;
 
 #[derive(
     Display,
@@ -364,6 +366,7 @@ impl<'a> ResponseEntity for StackCow<'a> {
     }
 }
 
+#[cfg(feature = "rweb-openapi")]
 impl<'a> From<StackCow<'a>> for Body {
     #[inline]
     fn from(s: StackCow) -> Body {

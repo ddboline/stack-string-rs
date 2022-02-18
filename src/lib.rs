@@ -15,16 +15,13 @@
 #[macro_use]
 extern crate diesel;
 
-#[cfg(features = "small-string")]
-pub mod small_string;
-#[cfg(features = "stack-cow")]
-pub mod stack_cow;
 pub mod stack_string;
+pub mod stack_cow;
+pub mod small_string;
 
-#[cfg(features = "small-string")]
-pub use crate::small_string::SmallString;
-#[cfg(features = "stack-cow")]
-pub use crate::stack_cow::StackCow;
 pub use crate::stack_string::StackString;
+pub use crate::small_string::SmallString;
+pub use crate::stack_cow::StackCow;
+
 
 pub use smartstring::MAX_INLINE;

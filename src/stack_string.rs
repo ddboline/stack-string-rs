@@ -1,5 +1,4 @@
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
-use hyper::Body;
 use serde::{Deserialize, Serialize};
 use smartstring::alias::String as SmartString;
 use std::{
@@ -37,6 +36,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 use rweb::openapi::{
     ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
 };
+
+#[cfg(feature = "rweb-openapi")]
+use hyper::Body;
 
 #[derive(
     Display,
@@ -357,6 +359,7 @@ impl ResponseEntity for StackString {
     }
 }
 
+#[cfg(feature = "rweb-openapi")]
 impl From<StackString> for Body {
     #[inline]
     fn from(s: StackString) -> Body {

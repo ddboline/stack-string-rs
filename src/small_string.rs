@@ -1,5 +1,4 @@
 use arrayvec::ArrayString;
-use hyper::Body;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
@@ -24,6 +23,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 use rweb::openapi::{
     ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
 };
+
+#[cfg(feature = "rweb-openapi")]
+use hyper::Body;
 
 use crate::{StackString, MAX_INLINE};
 
@@ -83,9 +85,9 @@ impl<const CAP: usize> SmallString<CAP> {
     pub fn from_utf8_vec(v: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(v).map(|s| {
             if s.len() > CAP {
-                Self::Owned(s)
+                Self::Boxed(s)
             } else {
-                Self::Inline(s.into())
+                Self::Inline(ArrayString::from(s.as_str()).unwrap())
             }
         })
     }
@@ -252,9 +254,9 @@ impl<const CAP: usize> From<StackString> for SmallString<CAP> {
     fn from(item: StackString) -> Self {
         if item.len() > CAP {
             let s: String = item.into();
-            Self::Owned(s)
+            Self::Boxed(s)
         } else {
-            Self::Inline(item.as_str().into())
+            Self::Inline(ArrayString::from(item.as_str()).unwrap())
         }
     }
 }
@@ -407,6 +409,7 @@ impl<const CAP: usize> ResponseEntity for SmallString<CAP> {
     }
 }
 
+#[cfg(feature = "rweb-openapi")]
 impl<const CAP: usize> From<SmallString<CAP>> for Body {
     #[inline]
     fn from(s: SmallString<CAP>) -> Body {
@@ -445,7 +448,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_off() {
+    fn test_small_string_split_off() {
         let mut s0 = "hello there".to_string();
         let s1 = s0.split_off(3);
         let mut s2: SmallString<20> = "hello there".into();
