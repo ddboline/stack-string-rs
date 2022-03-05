@@ -414,11 +414,6 @@ mod tests {
     use crate::StackString;
 
     #[test]
-    fn test_smartstring_validate() {
-        smartstring::validate();
-    }
-
-    #[test]
     fn test_default() {
         assert_eq!(StackString::new(), StackString::default());
     }
