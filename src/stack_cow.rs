@@ -1,13 +1,12 @@
-use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
+use derive_more::Display;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
-use smartcow::SmartCow;
-use smartstring::alias::String as SmartString;
 use std::{
     borrow::{Borrow, Cow},
     convert::Infallible,
     ffi::OsStr,
     fmt::{self, Write as FmtWrite},
     iter::FromIterator,
+    ops::Deref,
     path::Path,
     str::FromStr,
     string::FromUtf8Error,
@@ -41,38 +40,42 @@ use rweb::openapi::{
 #[cfg(feature = "rweb-openapi")]
 use hyper::Body;
 
-#[derive(
-    Display,
-    Serialize,
-    Deserialize,
-    Deref,
-    DerefMut,
-    Index,
-    IndexMut,
-    Debug,
-    Clone,
-    Into,
-    From,
-    PartialEq,
-    Eq,
-    Hash,
-    Default,
-)]
+#[derive(Display, Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
 #[cfg_attr(feature = "diesel_types", sql_type = "Text")]
-pub struct StackCow<'a>(
-    #[serde(serialize_with = "serialize", deserialize_with = "deserialize")] SmartCow<'a>,
-);
+pub enum StackCow<'a> {
+    Borrowed(&'a str),
+    Owned(StackString),
+}
+
+impl Default for StackCow<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl StackCow<'_> {
+    pub fn to_owned(&self) -> StackCow<'static> {
+        self.clone().into_owned()
+    }
+
+    pub fn into_owned(self) -> StackCow<'static> {
+        match self {
+            Self::Borrowed(b) => StackCow::Owned(b.into()),
+            Self::Owned(o) => StackCow::Owned(o),
+        }
+    }
+}
 
 impl<'a> StackCow<'a> {
     pub fn new() -> Self {
-        Self(SmartCow::Owned(SmartString::new()))
+        Self::Owned(StackString::new())
     }
 
     pub fn is_borrowed(&self) -> bool {
-        match self.0 {
-            SmartCow::Borrowed(_) => true,
-            SmartCow::Owned(_) => false,
+        match self {
+            Self::Borrowed(_) => true,
+            Self::Owned(_) => false,
         }
     }
 
@@ -81,7 +84,10 @@ impl<'a> StackCow<'a> {
     }
 
     pub fn as_str(&self) -> &str {
-        self.0.as_ref()
+        match self {
+            Self::Borrowed(s) => *s,
+            Self::Owned(o) => o.as_str(),
+        }
     }
 
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
@@ -107,6 +113,17 @@ impl<'a> StackCow<'a> {
     }
 }
 
+impl Deref for StackCow<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Borrowed(b) => *b,
+            Self::Owned(o) => o,
+        }
+    }
+}
+
 impl<'a> PartialOrd<Self> for StackCow<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.as_str().partial_cmp(other.as_str())
@@ -119,33 +136,35 @@ impl<'a> Ord for StackCow<'a> {
     }
 }
 
-pub fn serialize<S>(s: &SmartCow<'_>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(s.as_ref())
+impl<'a> Serialize for StackCow<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
 }
 
-pub fn deserialize<'de, D>(deserializer: D) -> Result<SmartCow<'static>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    SmartString::deserialize(deserializer).map(Into::into)
+impl<'de> Deserialize<'de> for StackCow<'_> {
+    fn deserialize<D>(deserializer: D) -> Result<StackCow<'static>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        StackString::deserialize(deserializer).map(Into::into)
+    }
 }
 
 impl<'a> From<StackString> for StackCow<'a> {
     fn from(item: StackString) -> Self {
-        let s: SmartString = item.into();
-        let s: SmartCow = s.into();
-        Self(s)
+        Self::Owned(item)
     }
 }
 
 impl<'a> From<StackCow<'a>> for StackString {
     fn from(item: StackCow<'a>) -> Self {
-        match item.0 {
-            SmartCow::Borrowed(s) => s.into(),
-            SmartCow::Owned(s) => s.into(),
+        match item {
+            StackCow::Borrowed(s) => s.into(),
+            StackCow::Owned(s) => s.into(),
         }
     }
 }
@@ -153,17 +172,17 @@ impl<'a> From<StackCow<'a>> for StackString {
 impl<'a> From<Cow<'a, str>> for StackCow<'a> {
     fn from(item: Cow<'a, str>) -> Self {
         match item {
-            Cow::Borrowed(s) => Self(SmartCow::Borrowed(s)),
-            Cow::Owned(s) => Self(SmartCow::Owned(s.into())),
+            Cow::Borrowed(s) => Self::Borrowed(s),
+            Cow::Owned(s) => Self::Owned(s.into()),
         }
     }
 }
 
 impl<'a> From<StackCow<'a>> for String {
     fn from(item: StackCow) -> Self {
-        match item.0 {
-            SmartCow::Borrowed(s) => s.into(),
-            SmartCow::Owned(s) => s.into(),
+        match item {
+            StackCow::Borrowed(s) => s.into(),
+            StackCow::Owned(s) => s.into(),
         }
     }
 }
@@ -174,27 +193,21 @@ impl<'a> From<&StackCow<'a>> for String {
     }
 }
 
-impl<'a> From<&StackCow<'a>> for StackCow<'a> {
-    fn from(item: &StackCow) -> Self {
-        Self(item.0.clone().to_owned())
-    }
-}
-
 impl<'a> From<String> for StackCow<'a> {
     fn from(item: String) -> Self {
-        Self(item.into())
+        Self::Owned(item.into())
     }
 }
 
 impl<'a> From<&String> for StackCow<'a> {
     fn from(item: &String) -> Self {
-        Self(SmartCow::Owned(item.into()))
+        Self::Owned(item.into())
     }
 }
 
 impl<'a> From<&'a str> for StackCow<'a> {
     fn from(item: &'a str) -> Self {
-        Self(SmartCow::Borrowed(item))
+        StackCow::Borrowed(item)
     }
 }
 
@@ -206,19 +219,19 @@ impl<'a> From<&'a StackCow<'a>> for &'a str {
 
 impl<'a> Borrow<str> for StackCow<'a> {
     fn borrow(&self) -> &str {
-        self.0.borrow()
+        self.as_str()
     }
 }
 
 impl<'a> AsRef<str> for StackCow<'a> {
     fn as_ref(&self) -> &str {
-        self.0.as_ref()
+        self.as_str()
     }
 }
 
 impl<'a> AsRef<[u8]> for StackCow<'a> {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
+        self.as_str().as_bytes()
     }
 }
 
@@ -237,8 +250,7 @@ impl<'a> AsRef<Path> for StackCow<'a> {
 impl<'a> FromStr for StackCow<'a> {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s: SmartString = s.into();
-        Ok(Self(SmartCow::Owned(s)))
+        Ok(Self::Owned(s.into()))
     }
 }
 
@@ -259,7 +271,7 @@ impl<'a> PartialEq<String> for StackCow<'a> {
 impl<'a> PartialEq<str> for StackCow<'a> {
     #[inline]
     fn eq(&self, other: &str) -> bool {
-        let s: &str = self.0.as_ref();
+        let s: &str = self.as_ref();
         PartialEq::eq(s, other)
     }
 }
@@ -273,8 +285,7 @@ impl<'a> PartialEq<&'a str> for StackCow<'a> {
 
 impl<'a> FromIterator<char> for StackCow<'a> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
-        let s: SmartString = SmartString::from_iter(iter);
-        Self(SmartCow::Owned(s))
+        Self::Owned(StackString::from_iter(iter))
     }
 }
 
@@ -409,13 +420,9 @@ impl<'a> sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackC
 #[cfg(test)]
 mod tests {
     use rand::{thread_rng, Rng};
+    use serde::Deserialize;
 
     use crate::{StackCow, StackString};
-
-    #[test]
-    fn test_smartstring_validate() {
-        smartstring::validate();
-    }
 
     #[test]
     fn test_default() {
@@ -480,8 +487,7 @@ mod tests {
     #[test]
     fn test_from_str() {
         let s = StackCow::from("Hello");
-        let st: StackCow = "Hello".parse().unwrap();
-        assert_eq!(s, st);
+        assert_eq!(s, StackCow::Borrowed("Hello"));
     }
 
     #[test]
@@ -572,7 +578,7 @@ mod tests {
 
         let t = Test {};
         let s = StackCow::from_display(t);
-        assert_eq!(s, StackCow::from("THIS IS A TEST"));
+        assert_eq!(s, StackCow::from(StackString::from("THIS IS A TEST")));
     }
 
     #[test]
@@ -587,5 +593,30 @@ mod tests {
         let s: StackString = s.into();
         assert_eq!(s.len(), 20);
         assert_eq!(s.is_inline(), true);
+    }
+
+    #[test]
+    fn test_serde() {
+        let s = StackCow::from("HELLO");
+        let t = "HELLO";
+        let s = serde_json::to_vec(&s).unwrap();
+        let t = serde_json::to_vec(t).unwrap();
+        assert_eq!(s, t);
+
+        let s = r#"{"a": "b"}"#;
+
+        #[derive(Deserialize)]
+        struct A<'a> {
+            a: StackCow<'a>,
+        }
+
+        #[derive(Deserialize)]
+        struct B {
+            a: String,
+        }
+
+        let a: A = serde_json::from_str(s).unwrap();
+        let b: B = serde_json::from_str(s).unwrap();
+        assert_eq!(a.a.as_str(), b.a.as_str());
     }
 }
