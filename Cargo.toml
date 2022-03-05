@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "0.6.5"
+version = "0.7.0"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -14,8 +14,7 @@ readme = "README.md"
 [dependencies]
 serde = {version="1.0", features=["derive"]}
 derive_more = "0.99"
-smartstring = {version="0.2", features=["serde"]}
-smartcow = {version="0.1"}
+smartstring = {version="1.0", features=["serde"]}
 arrayvec = {version="0.7"}
 diesel = {version="1.4", features=["postgres"], optional=true}
 postgres-types = {version="0.2", optional=true}
@@ -26,6 +25,7 @@ sqlx-core = {version="0.5", features=["runtime-tokio-rustls","postgres"], option
 
 [dev-dependencies]
 rand = "0.8"
+serde_json = "1.0"
 
 [features]
 default = []
