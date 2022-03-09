@@ -39,6 +39,9 @@ use rweb::openapi::{
 #[cfg(feature = "rweb-openapi")]
 use hyper::Body;
 
+// #[cfg(features = "async_graphql")]
+use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
+
 #[derive(
     Display,
     Serialize,
@@ -341,7 +344,7 @@ where
 #[cfg(feature = "rweb-openapi")]
 impl Entity for StackString {
     fn type_name() -> Cow<'static, str> {
-        str::type_name()
+        <str as Entity>::type_name()
     }
 
     #[inline]
@@ -405,6 +408,27 @@ macro_rules! format_sstr {
         std::write!(buf, "{}", std::format_args!($($arg)*)).unwrap();
         buf
     }}
+}
+
+// #[cfg(features = "async_graphql")]
+#[Scalar]
+impl ScalarType for StackString {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        if let Value::String(s) = value {
+            let s: StackString = s.into();
+            Ok(s)
+        } else {
+            Err(InputValueError::expected_type(value))
+        }
+    }
+
+    fn is_valid(value: &Value) -> bool {
+        matches!(value, Value::String(_))
+    }
+
+    fn to_value(&self) -> Value {
+        Value::String(self.to_string())
+    }
 }
 
 #[cfg(test)]
