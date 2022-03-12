@@ -74,6 +74,7 @@ impl StackString {
         self.0.as_str()
     }
 
+    #[must_use]
     pub fn split_off(&mut self, index: usize) -> Self {
         Self(self.0.split_off(index))
     }

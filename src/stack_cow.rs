@@ -162,7 +162,7 @@ impl<'a> From<StackCow<'a>> for StackString {
     fn from(item: StackCow<'a>) -> Self {
         match item {
             StackCow::Borrowed(s) => s.into(),
-            StackCow::Owned(s) => s.into(),
+            StackCow::Owned(s) => s,
         }
     }
 }
@@ -199,7 +199,7 @@ impl<'a> From<String> for StackCow<'a> {
 
 impl<'a> From<&'a String> for StackCow<'a> {
     fn from(item: &'a String) -> Self {
-        Self::Borrowed(item.as_str().into())
+        Self::Borrowed(item.as_str())
     }
 }
 
