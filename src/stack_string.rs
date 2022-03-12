@@ -39,7 +39,7 @@ use rweb::openapi::{
 #[cfg(feature = "rweb-openapi")]
 use hyper::Body;
 
-// #[cfg(features = "async_graphql")]
+#[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[derive(
@@ -370,37 +370,6 @@ impl From<StackString> for Body {
     }
 }
 
-#[cfg(feature = "sqlx_types")]
-impl sqlx_core::encode::Encode<'_, sqlx_core::postgres::Postgres> for StackString {
-    fn encode_by_ref(
-        &self,
-        buf: &mut sqlx_core::postgres::PgArgumentBuffer,
-    ) -> sqlx_core::encode::IsNull {
-        <&str as sqlx_core::encode::Encode<sqlx_core::postgres::Postgres>>::encode(&**self, buf)
-    }
-}
-
-#[cfg(feature = "sqlx_types")]
-impl sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackString {
-    fn type_info() -> sqlx_core::postgres::PgTypeInfo {
-        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::type_info()
-    }
-
-    fn compatible(ty: &sqlx_core::postgres::PgTypeInfo) -> bool {
-        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::compatible(ty)
-    }
-}
-
-#[cfg(feature = "sqlx_types")]
-impl sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackString {
-    fn decode(
-        value: sqlx_core::postgres::PgValueRef<'_>,
-    ) -> Result<Self, sqlx_core::error::BoxDynError> {
-        <String as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value)
-            .map(|s| s.into())
-    }
-}
-
 #[macro_export]
 macro_rules! format_sstr {
     ($($arg:tt)*) => {{
@@ -410,7 +379,8 @@ macro_rules! format_sstr {
     }}
 }
 
-// #[cfg(features = "async_graphql")]
+/// Allow StackString to be used as graphql scalar value
+#[cfg(feature = "async_graphql")]
 #[Scalar]
 impl ScalarType for StackString {
     fn parse(value: Value) -> InputValueResult<Self> {
@@ -641,5 +611,93 @@ mod tests {
         let s = StackString::from_utf8_lossy(&v);
         assert_eq!(s.len(), 20);
         assert_eq!(s.is_inline(), true);
+    }
+
+    #[test]
+    fn test_serde() {
+        use serde::Deserialize;
+
+        let s = StackString::from("HELLO");
+        let t = "HELLO";
+        let s = serde_json::to_vec(&s).unwrap();
+        let t = serde_json::to_vec(t).unwrap();
+        assert_eq!(s, t);
+
+        let s = r#"{"a": "b"}"#;
+
+        #[derive(Deserialize)]
+        struct A {
+            a: StackString,
+        }
+
+        #[derive(Deserialize)]
+        struct B {
+            a: String,
+        }
+
+        let a: A = serde_json::from_str(s).unwrap();
+        let b: B = serde_json::from_str(s).unwrap();
+        assert_eq!(a.a.as_str(), b.a.as_str());
+    }
+
+    #[cfg(feature = "async_graphql")]
+    #[test]
+    fn test_stackstring_async_graphql() {
+        use async_graphql::{
+            dataloader::{DataLoader, Loader},
+            Context, EmptyMutation, EmptySubscription, Object, Schema,
+        };
+        use async_trait::async_trait;
+        use std::{collections::HashMap, convert::Infallible};
+
+        struct StackStringLoader;
+
+        impl StackStringLoader {
+            fn new() -> Self {
+                Self
+            }
+        }
+
+        #[async_trait]
+        impl Loader<StackString> for StackStringLoader {
+            type Value = StackString;
+            type Error = Infallible;
+
+            async fn load(
+                &self,
+                _: &[StackString],
+            ) -> Result<HashMap<StackString, Self::Value>, Self::Error> {
+                let mut m = HashMap::new();
+                m.insert("HELLO".into(), "WORLD".into());
+                Ok(m)
+            }
+        }
+
+        struct QueryRoot;
+
+        #[Object]
+        impl<'a> QueryRoot {
+            async fn hello(&self, ctx: &Context<'a>) -> Result<Option<StackString>, Infallible> {
+                let hello = ctx
+                    .data::<DataLoader<StackStringLoader>>()
+                    .unwrap()
+                    .load_one("hello".into())
+                    .await
+                    .unwrap();
+                Ok(hello)
+            }
+        }
+
+        let expected_sdl = include_str!("../tests/data/sdl_file_stackstring.txt");
+
+        let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+            .data(DataLoader::new(
+                StackStringLoader::new(),
+                tokio::task::spawn,
+            ))
+            .finish();
+        let sdl = schema.sdl();
+
+        assert_eq!(&sdl, expected_sdl);
     }
 }

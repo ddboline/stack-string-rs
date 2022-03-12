@@ -54,7 +54,11 @@ impl Default for StackCow<'_> {
     }
 }
 
-impl StackCow<'_> {
+impl<'a> StackCow<'a> {
+    pub fn new() -> Self {
+        Self::Owned(StackString::new())
+    }
+
     pub fn to_owned(&self) -> StackCow<'static> {
         self.clone().into_owned()
     }
@@ -64,12 +68,6 @@ impl StackCow<'_> {
             Self::Borrowed(b) => StackCow::Owned(b.into()),
             Self::Owned(o) => StackCow::Owned(o),
         }
-    }
-}
-
-impl<'a> StackCow<'a> {
-    pub fn new() -> Self {
-        Self::Owned(StackString::new())
     }
 
     pub fn is_borrowed(&self) -> bool {
@@ -199,9 +197,9 @@ impl<'a> From<String> for StackCow<'a> {
     }
 }
 
-impl<'a> From<&String> for StackCow<'a> {
-    fn from(item: &String) -> Self {
-        Self::Owned(item.into())
+impl<'a> From<&'a String> for StackCow<'a> {
+    fn from(item: &'a String) -> Self {
+        Self::Borrowed(item.as_str().into())
     }
 }
 
@@ -383,37 +381,6 @@ impl<'a> From<StackCow<'a>> for Body {
     fn from(s: StackCow) -> Body {
         let s: String = s.into();
         Body::from(s)
-    }
-}
-
-#[cfg(feature = "sqlx_types")]
-impl<'a> sqlx_core::encode::Encode<'_, sqlx_core::postgres::Postgres> for StackCow<'a> {
-    fn encode_by_ref(
-        &self,
-        buf: &mut sqlx_core::postgres::PgArgumentBuffer,
-    ) -> sqlx_core::encode::IsNull {
-        <&str as sqlx_core::encode::Encode<sqlx_core::postgres::Postgres>>::encode(&**self, buf)
-    }
-}
-
-#[cfg(feature = "sqlx_types")]
-impl<'a> sqlx_core::types::Type<sqlx_core::postgres::Postgres> for StackCow<'a> {
-    fn type_info() -> sqlx_core::postgres::PgTypeInfo {
-        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::type_info()
-    }
-
-    fn compatible(ty: &sqlx_core::postgres::PgTypeInfo) -> bool {
-        <&str as sqlx_core::types::Type<sqlx_core::postgres::Postgres>>::compatible(ty)
-    }
-}
-
-#[cfg(feature = "sqlx_types")]
-impl<'a> sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres> for StackCow<'a> {
-    fn decode(
-        value: sqlx_core::postgres::PgValueRef<'_>,
-    ) -> Result<Self, sqlx_core::error::BoxDynError> {
-        <String as sqlx_core::decode::Decode<'_, sqlx_core::postgres::Postgres>>::decode(value)
-            .map(|s| s.into())
     }
 }
 

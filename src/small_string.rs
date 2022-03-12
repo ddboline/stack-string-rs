@@ -1,7 +1,7 @@
 use arrayvec::ArrayString;
 use core::marker::PhantomData;
 use serde::{
-    de::{Error, Visitor},
+    de::{Error, Unexpected, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::{
@@ -31,6 +31,9 @@ use rweb::openapi::{
 
 #[cfg(feature = "rweb-openapi")]
 use hyper::Body;
+
+#[cfg(feature = "async_graphql")]
+use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 use crate::{StackString, MAX_INLINE};
 
@@ -203,7 +206,7 @@ impl<const CAP: usize> SmallString<CAP> {
 
 impl<const CAP: usize> From<&str> for SmallString<CAP> {
     fn from(item: &str) -> Self {
-        ArrayString::from(item).map_or_else(|_| Self::Boxed(item.into()), Self::Inline)
+        ArrayString::from(item).map_or_else(|e| Self::Boxed(e.element().into()), Self::Inline)
     }
 }
 
@@ -248,6 +251,29 @@ impl<'de, const CAP: usize> Visitor<'de> for SmartStringVisitor<CAP> {
         E: Error,
     {
         Ok(SmallString::from(v))
+    }
+
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        match str::from_utf8(v) {
+            Ok(s) => Ok(s.into()),
+            Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self)),
+        }
+    }
+
+    fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        match String::from_utf8(v) {
+            Ok(s) => Ok(s.into()),
+            Err(e) => Err(Error::invalid_value(
+                Unexpected::Bytes(&e.into_bytes()),
+                &self,
+            )),
+        }
     }
 }
 
@@ -530,6 +556,28 @@ impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
     }
 }
 
+/// Allow SmallString to be used as graphql scalar value
+#[cfg(feature = "async_graphql")]
+#[Scalar]
+impl<const CAP: usize> ScalarType for SmallString<CAP> {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        if let Value::String(s) = value {
+            let s: Self = s.into();
+            Ok(s)
+        } else {
+            Err(InputValueError::expected_type(value))
+        }
+    }
+
+    fn is_valid(value: &Value) -> bool {
+        matches!(value, Value::String(_))
+    }
+
+    fn to_value(&self) -> Value {
+        Value::String(self.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use arrayvec::ArrayString;
@@ -743,5 +791,95 @@ mod tests {
         assert!(s.is_inline());
         let s = s.into_smallstring::<5>();
         assert!(s.is_boxed());
+    }
+
+    #[test]
+    fn test_serde() {
+        use serde::Deserialize;
+
+        let s = SmallString::<30>::from("HELLO");
+        let t = "HELLO";
+        let s = serde_json::to_vec(&s).unwrap();
+        let t = serde_json::to_vec(t).unwrap();
+        assert_eq!(s, t);
+
+        let s = r#"{"a": "b"}"#;
+
+        #[derive(Deserialize)]
+        struct A {
+            a: SmallString<30>,
+        }
+
+        #[derive(Deserialize)]
+        struct B {
+            a: String,
+        }
+
+        let a: A = serde_json::from_str(s).unwrap();
+        let b: B = serde_json::from_str(s).unwrap();
+        assert_eq!(a.a.as_str(), b.a.as_str());
+    }
+
+    #[cfg(feature = "async_graphql")]
+    #[test]
+    fn test_smallstring_async_graphql() {
+        use async_graphql::{
+            dataloader::{DataLoader, Loader},
+            Context, EmptyMutation, EmptySubscription, Object, Schema,
+        };
+        use async_trait::async_trait;
+        use std::{collections::HashMap, convert::Infallible};
+
+        struct SmallStringLoader;
+
+        impl SmallStringLoader {
+            fn new() -> Self {
+                Self
+            }
+        }
+
+        #[async_trait]
+        impl<const CAP: usize> Loader<SmallString<CAP>> for SmallStringLoader {
+            type Value = SmallString<CAP>;
+            type Error = Infallible;
+
+            async fn load(
+                &self,
+                _: &[SmallString<CAP>],
+            ) -> Result<HashMap<SmallString<CAP>, Self::Value>, Self::Error> {
+                let mut m = HashMap::new();
+                m.insert("HELLO".into(), "WORLD".into());
+                Ok(m)
+            }
+        }
+
+        struct QueryRoot<const CAP: usize>;
+
+        #[Object]
+        impl<const CAP: usize, 'a> QueryRoot<CAP> {
+            async fn hello(
+                &self,
+                ctx: &Context<'a>,
+            ) -> Result<Option<SmallString<CAP>>, Infallible> {
+                let hello = ctx
+                    .data::<DataLoader<SmallStringLoader>>()
+                    .unwrap()
+                    .load_one("hello".into())
+                    .await
+                    .unwrap();
+                Ok(hello)
+            }
+        }
+
+        let expected_sdl = include_str!("../tests/data/sdl_file_smallstring.txt");
+
+        let schema = Schema::build(QueryRoot::<5>, EmptyMutation, EmptySubscription)
+            .data(DataLoader::new(
+                SmallStringLoader::new(),
+                tokio::task::spawn,
+            ))
+            .finish();
+        let sdl = schema.sdl();
+        assert_eq!(&sdl, expected_sdl);
     }
 }
