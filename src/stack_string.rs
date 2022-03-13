@@ -66,10 +66,12 @@ use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value
 pub struct StackString(SmartString);
 
 impl StackString {
+    #[must_use]
     pub fn new() -> Self {
         Self(SmartString::new())
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -87,6 +89,7 @@ impl StackString {
         String::from_utf8(vec).map(Into::into)
     }
 
+    #[must_use]
     pub fn from_utf8_lossy(v: &[u8]) -> Self {
         if v.len() > MAX_INLINE {
             match String::from_utf8_lossy(v) {

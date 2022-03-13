@@ -51,11 +51,13 @@ impl<const CAP: usize> Default for SmallString<CAP> {
 
 impl<const CAP: usize> SmallString<CAP> {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::Inline(ArrayString::new())
     }
 
     #[inline]
+    #[must_use]
     pub fn is_inline(&self) -> bool {
         match self {
             Self::Inline(_) => true,
@@ -64,11 +66,13 @@ impl<const CAP: usize> SmallString<CAP> {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_boxed(&self) -> bool {
         !self.is_inline()
     }
 
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         match self {
             Self::Inline(s) => s.as_str(),
@@ -106,6 +110,7 @@ impl<const CAP: usize> SmallString<CAP> {
         ArrayString::from_byte_string(b).map(Self::Inline)
     }
 
+    #[must_use]
     pub fn from_utf8_lossy(v: &[u8]) -> Self {
         if v.len() > CAP {
             match String::from_utf8_lossy(v) {
@@ -193,6 +198,7 @@ impl<const CAP: usize> SmallString<CAP> {
         s
     }
 
+    #[must_use]
     pub fn into_smallstring<const CAP1: usize>(self) -> SmallString<CAP1> {
         if self.len() > CAP1 {
             match self {

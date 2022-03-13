@@ -55,14 +55,17 @@ impl Default for StackCow<'_> {
 }
 
 impl<'a> StackCow<'a> {
+    #[must_use]
     pub fn new() -> Self {
         Self::Owned(StackString::new())
     }
 
+    #[must_use]
     pub fn to_owned(&self) -> StackCow<'static> {
         self.clone().into_owned()
     }
 
+    #[must_use]
     pub fn into_owned(self) -> StackCow<'static> {
         match self {
             Self::Borrowed(b) => StackCow::Owned(b.into()),
@@ -70,6 +73,7 @@ impl<'a> StackCow<'a> {
         }
     }
 
+    #[must_use]
     pub fn is_borrowed(&self) -> bool {
         match self {
             Self::Borrowed(_) => true,
@@ -77,10 +81,12 @@ impl<'a> StackCow<'a> {
         }
     }
 
+    #[must_use]
     pub fn is_owned(&self) -> bool {
         !self.is_borrowed()
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         match self {
             Self::Borrowed(s) => *s,
@@ -92,6 +98,7 @@ impl<'a> StackCow<'a> {
         String::from_utf8(vec).map(Into::into)
     }
 
+    #[must_use]
     pub fn from_utf8_lossy(v: &'a [u8]) -> Self {
         if v.len() > MAX_INLINE {
             String::from_utf8_lossy(v).into()
