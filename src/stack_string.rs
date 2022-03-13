@@ -81,10 +81,18 @@ impl StackString {
         Self(self.0.split_off(index))
     }
 
+    /// Construct a `StackString` from a `&[u8]`
+    /// # Errors
+    ///
+    /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8(v: &[u8]) -> Result<Self, Utf8Error> {
         str::from_utf8(v).map(Into::into)
     }
 
+    /// Construct a `StackString` from a `Vec<u8>`
+    /// # Errors
+    ///
+    /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8_vec(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }

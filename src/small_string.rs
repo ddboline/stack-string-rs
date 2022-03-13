@@ -88,12 +88,19 @@ impl<const CAP: usize> SmallString<CAP> {
         }
     }
 
+    /// Construct a `SmallString` from a `&[u8]`
+    /// # Errors
+    ///
+    /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8(v: &[u8]) -> Result<Self, Utf8Error> {
         str::from_utf8(v)
             .map(|s| ArrayString::from(s).map_or_else(|_| Self::Boxed(s.into()), Self::Inline))
     }
 
-    #[allow(clippy::missing_panics_doc)]
+    /// Construct a `SmallString` from a `Vec<u8>`
+    /// # Errors
+    ///
+    /// Will return an Error if the `Vec<u8>` not utf8 compliant
     pub fn from_utf8_vec(v: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(v).map(|s| {
             if s.len() > CAP {
@@ -104,10 +111,6 @@ impl<const CAP: usize> SmallString<CAP> {
                 Self::Inline(astr)
             }
         })
-    }
-
-    pub fn from_byte_string(b: &[u8; CAP]) -> Result<Self, Utf8Error> {
-        ArrayString::from_byte_string(b).map(Self::Inline)
     }
 
     #[must_use]

@@ -94,6 +94,10 @@ impl<'a> StackCow<'a> {
         }
     }
 
+    /// Construct a `StackCow` from a `Vec<u8>`
+    /// # Errors
+    ///
+    /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         String::from_utf8(vec).map(Into::into)
     }
