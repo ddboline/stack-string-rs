@@ -385,6 +385,7 @@ impl From<StackString> for Body {
 #[macro_export]
 macro_rules! format_sstr {
     ($($arg:tt)*) => {{
+        use std::fmt::Write;
         let mut buf = $crate::StackString::new();
         std::write!(buf, "{}", std::format_args!($($arg)*)).unwrap();
         buf
@@ -608,7 +609,6 @@ mod tests {
     #[test]
     fn test_format_sstr() {
         use crate::format_sstr;
-        use std::fmt::Write;
 
         let s = format_sstr!("This is a test {}", 22);
         assert_eq!(s, StackString::from("This is a test 22"));
