@@ -1,10 +1,17 @@
+
+
+
+
 type QueryRoot {
 	hello: StackString
 }
+
 """
 Allow StackString to be used as graphql scalar value
 """
 scalar StackString
+
+
 schema {
 	query: QueryRoot
 }
