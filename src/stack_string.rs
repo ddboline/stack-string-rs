@@ -257,14 +257,14 @@ impl<'a> PartialEq<Cow<'a, str>> for StackString {
     }
 }
 
-impl<'a> PartialEq<String> for StackString {
+impl PartialEq<String> for StackString {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialEq<str> for StackString {
+impl PartialEq<str> for StackString {
     #[inline]
     fn eq(&self, other: &str) -> bool {
         PartialEq::eq(&self.0, other)
