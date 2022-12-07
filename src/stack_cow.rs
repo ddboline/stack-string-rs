@@ -89,7 +89,7 @@ impl<'a> StackCow<'a> {
     #[must_use]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Borrowed(s) => *s,
+            Self::Borrowed(s) => s,
             Self::Owned(o) => o.as_str(),
         }
     }
@@ -127,7 +127,7 @@ impl Deref for StackCow<'_> {
 
     fn deref(&self) -> &Self::Target {
         match self {
-            Self::Borrowed(b) => *b,
+            Self::Borrowed(b) => b,
             Self::Owned(o) => o,
         }
     }
@@ -339,30 +339,6 @@ impl<'a> ToSql for StackCow<'a> {
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.as_str().to_sql_checked(ty, out)
-    }
-}
-
-#[cfg(feature = "diesel_types")]
-impl<'a, ST, DB> DeFromSql<ST, DB> for StackCow<'a>
-where
-    DB: Backend,
-    *const str: DeFromSql<ST, DB>,
-{
-    fn from_sql(bytes: Option<&DB::RawValue>) -> DeResult<Self> {
-        let str_ptr = <*const str as DeFromSql<ST, DB>>::from_sql(bytes)?;
-        let s = unsafe { &*str_ptr };
-        Ok(s.into())
-    }
-}
-
-#[cfg(feature = "diesel_types")]
-impl<'a, DB> DeToSql<Text, DB> for StackCow<'a>
-where
-    DB: Backend,
-    str: DeToSql<Text, DB>,
-{
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> SerResult {
-        self.as_str().to_sql(out)
     }
 }
 

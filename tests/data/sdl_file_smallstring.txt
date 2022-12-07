@@ -1,10 +1,17 @@
+
+
+
+
 type QueryRoot {
 	hello: SmallString
 }
+
 """
 Allow SmallString to be used as graphql scalar value
 """
 scalar SmallString
+
+
 schema {
 	query: QueryRoot
 }

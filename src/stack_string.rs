@@ -15,17 +15,6 @@ use std::{
 
 use crate::MAX_INLINE;
 
-#[cfg(feature = "diesel_types")]
-use diesel::{
-    backend::Backend,
-    deserialize::{FromSql as DeFromSql, Result as DeResult},
-    serialize::{Output, Result as SerResult, ToSql as DeToSql},
-    sql_types::Text,
-};
-
-#[cfg(feature = "diesel_types")]
-use std::io::Write;
-
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
@@ -61,8 +50,6 @@ use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value
     PartialOrd,
     Ord,
 )]
-#[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
-#[cfg_attr(feature = "diesel_types", sql_type = "Text")]
 pub struct StackString(SmartString);
 
 impl StackString {
@@ -326,30 +313,6 @@ impl ToSql for StackString {
         out: &mut BytesMut,
     ) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.as_str().to_sql_checked(ty, out)
-    }
-}
-
-#[cfg(feature = "diesel_types")]
-impl<ST, DB> DeFromSql<ST, DB> for StackString
-where
-    DB: Backend,
-    *const str: DeFromSql<ST, DB>,
-{
-    fn from_sql(bytes: Option<&DB::RawValue>) -> DeResult<Self> {
-        let str_ptr = <*const str as DeFromSql<ST, DB>>::from_sql(bytes)?;
-        let s = unsafe { &*str_ptr };
-        Ok(s.into())
-    }
-}
-
-#[cfg(feature = "diesel_types")]
-impl<DB> DeToSql<Text, DB> for StackString
-where
-    DB: Backend,
-    str: DeToSql<Text, DB>,
-{
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> SerResult {
-        self.as_str().to_sql(out)
     }
 }
 

@@ -4,10 +4,6 @@
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::unsafe_derive_deserialize)]
 
-#[cfg(feature = "diesel_types")]
-#[macro_use]
-extern crate diesel;
-
 pub mod small_string;
 pub mod stack_cow;
 pub mod stack_string;
