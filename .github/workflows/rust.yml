@@ -42,3 +42,6 @@ jobs:
       with:
         name: code-coverage-report
         path: cobertura.xml
+
+    - name: Check semver
+      uses: obi1kenobi/cargo-semver-checks-action@v2
