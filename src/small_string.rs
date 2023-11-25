@@ -455,10 +455,22 @@ impl<'a, const CAP: usize> PartialEq<Cow<'a, str>> for SmallString<CAP> {
     }
 }
 
+impl<'a, const CAP: usize> PartialOrd<Cow<'a, str>> for SmallString<CAP> {
+    fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
+    }
+}
+
 impl<const CAP: usize> PartialEq<String> for SmallString<CAP> {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<const CAP: usize> PartialOrd<String> for SmallString<CAP> {
+    fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -469,10 +481,22 @@ impl<const CAP: usize> PartialEq<str> for SmallString<CAP> {
     }
 }
 
+impl<const CAP: usize> PartialOrd<str> for SmallString<CAP> {
+    fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], other)
+    }
+}
+
 impl<const CAP: usize> PartialEq<&str> for SmallString<CAP> {
     #[inline]
     fn eq(&self, other: &&str) -> bool {
         PartialEq::eq(&self.as_str(), other)
+    }
+}
+
+impl<const CAP: usize> PartialOrd<&str> for SmallString<CAP> {
+    fn partial_cmp(&self, other: &&str) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -702,6 +726,7 @@ mod tests {
         assert_eq!(SmallString::<20>::from("Hello"), String::from("Hello"));
         assert_eq!(SmallString::<20>::from("Hello"), "Hello");
         assert_eq!(&SmallString::<20>::from("Hello"), "Hello");
+        assert!(SmallString::<20>::from("alpha") < "beta");
     }
 
     #[test]

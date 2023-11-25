@@ -244,10 +244,22 @@ impl<'a> PartialEq<Cow<'a, str>> for StackString {
     }
 }
 
+impl<'a> PartialOrd<Cow<'a, str>> for StackString {
+    fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
+    }
+}
+
 impl PartialEq<String> for StackString {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl PartialOrd<String> for StackString {
+    fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -258,10 +270,46 @@ impl PartialEq<str> for StackString {
     }
 }
 
+impl PartialOrd<str> for StackString {
+    fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], other)
+    }
+}
+
 impl<'a> PartialEq<&'a str> for StackString {
     #[inline]
     fn eq(&self, other: &&'a str) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<'a> PartialOrd<&'a str> for StackString {
+    fn partial_cmp(&self, other: &&'a str) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
+    }
+}
+
+impl PartialEq<StackString> for str {
+    fn eq(&self, other: &StackString) -> bool {
+        PartialEq::eq(self, &other[..])
+    }
+}
+
+impl PartialOrd<StackString> for str {
+    fn partial_cmp(&self, other: &StackString) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(self, &other[..])
+    }
+}
+
+impl<'a> PartialEq<StackString> for &'a str {
+    fn eq(&self, other: &StackString) -> bool {
+        PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<'a> PartialOrd<StackString> for &'a str {
+    fn partial_cmp(&self, other: &StackString) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -492,6 +540,8 @@ mod tests {
         assert_eq!(StackString::from("Hello"), String::from("Hello"));
         assert_eq!(StackString::from("Hello"), "Hello");
         assert_eq!(&StackString::from("Hello"), "Hello");
+        assert!(StackString::from("alpha") < "beta");
+        assert!("beta" > StackString::from("alpha"));
     }
 
     #[test]

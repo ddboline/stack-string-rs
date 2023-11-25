@@ -40,7 +40,7 @@ use rweb::openapi::{
 #[cfg(feature = "rweb-openapi")]
 use rweb::hyper::Body;
 
-#[derive(Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Display, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
 #[cfg_attr(feature = "diesel_types", sql_type = "Text")]
 pub enum StackCow<'a> {
@@ -130,18 +130,6 @@ impl Deref for StackCow<'_> {
             Self::Borrowed(b) => b,
             Self::Owned(o) => o,
         }
-    }
-}
-
-impl<'a> PartialOrd<Self> for StackCow<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.as_str().partial_cmp(other.as_str())
-    }
-}
-
-impl<'a> Ord for StackCow<'a> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.as_str().cmp(other.as_str())
     }
 }
 
@@ -263,10 +251,16 @@ impl<'a> FromStr for StackCow<'a> {
     }
 }
 
-impl<'a> PartialEq<Cow<'a, str>> for StackCow<'a> {
+impl<'a, 'b> PartialEq<Cow<'a, str>> for StackCow<'b> {
     #[inline]
     fn eq(&self, other: &Cow<'a, str>) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<'a, 'b> PartialOrd<Cow<'a, str>> for StackCow<'b> {
+    fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -274,6 +268,12 @@ impl<'a> PartialEq<String> for StackCow<'a> {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<'a> PartialOrd<String> for StackCow<'a> {
+    fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
+        PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
@@ -285,16 +285,40 @@ impl<'a> PartialEq<str> for StackCow<'a> {
     }
 }
 
-impl<'a> PartialEq<&'a str> for StackCow<'a> {
+impl<'a, 'b> PartialEq<&'b str> for StackCow<'a> {
     #[inline]
-    fn eq(&self, other: &&'a str) -> bool {
+    fn eq(&self, other: &&str) -> bool {
         PartialEq::eq(&self[..], &other[..])
+    }
+}
+
+impl<'a, 'b> PartialEq<StackCow<'a>> for &'b str {
+    fn eq(&self, other: &StackCow<'a>) -> bool {
+        self.eq(&other.as_str())
     }
 }
 
 impl<'a> FromIterator<char> for StackCow<'a> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
         Self::Owned(StackString::from_iter(iter))
+    }
+}
+
+impl<'a> PartialOrd<str> for StackCow<'a> {
+    fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
+        self.as_str().partial_cmp(other)
+    }
+}
+
+impl<'a, 'b> PartialOrd<&'b str> for StackCow<'a> {
+    fn partial_cmp(&self, other: &&str) -> Option<std::cmp::Ordering> {
+        self.as_str().partial_cmp(*other)
+    }
+}
+
+impl<'a> PartialOrd<StackCow<'a>> for &str {
+    fn partial_cmp(&self, other: &StackCow<'a>) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other.as_str())
     }
 }
 
@@ -451,6 +475,10 @@ mod tests {
         let ps = p.to_string_lossy();
         let s = StackCow::from("Hello");
         assert_eq!(s, ps);
+        let p = Path::new("alpha");
+        let ps: StackCow<'_> = p.to_string_lossy().into();
+        let s = StackCow::from("beta");
+        assert!(s > ps);
     }
 
     #[test]
@@ -458,6 +486,8 @@ mod tests {
         assert_eq!(StackCow::from("Hello"), String::from("Hello"));
         assert_eq!(StackCow::from("Hello"), "Hello");
         assert_eq!(&StackCow::from("Hello"), "Hello");
+        assert!(StackCow::from("alpha") < "beta");
+        assert!("beta" > StackCow::from("alpha"));
     }
 
     #[test]
