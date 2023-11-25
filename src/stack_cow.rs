@@ -38,7 +38,7 @@ use rweb::openapi::{
 };
 
 #[cfg(feature = "rweb-openapi")]
-use hyper::Body;
+use rweb::hyper::Body;
 
 #[derive(Display, Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]

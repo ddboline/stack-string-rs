@@ -30,7 +30,7 @@ use rweb::openapi::{
 };
 
 #[cfg(feature = "rweb-openapi")]
-use hyper::Body;
+use rweb::hyper::Body;
 
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
