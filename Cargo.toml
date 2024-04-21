@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -18,8 +18,8 @@ smartstring = {version="1.0", features=["serde"]}
 arrayvec = {version="0.7"}
 postgres-types = {version="0.2", optional=true}
 bytes = {version="1.0", optional=true}
-async-graphql = {version="6.0", features=["dataloader"], optional=true}
-rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi"], optional=true, tag="0.15.1-1"}
+async-graphql = {version="7.0", features=["dataloader"], optional=true}
+rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi"], optional=true, tag="0.15.2"}
 
 [dev-dependencies]
 rand = "0.8"
