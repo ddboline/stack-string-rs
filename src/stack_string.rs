@@ -428,6 +428,7 @@ impl ScalarType for StackString {
 #[cfg(test)]
 mod tests {
     use rand::{thread_rng, Rng};
+    use std::future::Future;
 
     use crate::StackString;
 
@@ -688,21 +689,27 @@ mod tests {
             type Value = StackString;
             type Error = Infallible;
 
-            async fn load(
+            fn load(
                 &self,
                 _: &[StackString],
-            ) -> Result<HashMap<StackString, Self::Value>, Self::Error> {
-                let mut m = HashMap::new();
-                m.insert("HELLO".into(), "WORLD".into());
-                Ok(m)
+            ) -> impl Future<Output = Result<HashMap<StackString, Self::Value>, Self::Error>>
+            {
+                async move {
+                    let mut m = HashMap::new();
+                    m.insert("HELLO".into(), "WORLD".into());
+                    Ok(m)
+                }
             }
         }
 
         struct QueryRoot;
 
         #[Object]
-        impl<'a> QueryRoot {
-            async fn hello(&self, ctx: &Context<'a>) -> Result<Option<StackString>, Infallible> {
+        impl QueryRoot {
+            async fn hello<'a>(
+                &self,
+                ctx: &Context<'a>,
+            ) -> Result<Option<StackString>, Infallible> {
                 let hello = ctx
                     .data::<DataLoader<StackStringLoader>>()
                     .unwrap()

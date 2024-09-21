@@ -616,7 +616,7 @@ impl<const CAP: usize> ScalarType for SmallString<CAP> {
 mod tests {
     use arrayvec::ArrayString;
     use rand::{thread_rng, Rng};
-    use std::fmt::Write;
+    use std::{fmt::Write, future::Future};
 
     use crate::{small_string::SmallString, stack_string::StackString};
 
@@ -862,7 +862,6 @@ mod tests {
             dataloader::{DataLoader, Loader},
             Context, EmptyMutation, EmptySubscription, Object, Schema,
         };
-        use async_trait::async_trait;
         use std::{collections::HashMap, convert::Infallible};
 
         struct SmallStringLoader;
@@ -873,26 +872,28 @@ mod tests {
             }
         }
 
-        #[async_trait]
         impl<const CAP: usize> Loader<SmallString<CAP>> for SmallStringLoader {
             type Value = SmallString<CAP>;
             type Error = Infallible;
 
-            async fn load(
+            fn load(
                 &self,
                 _: &[SmallString<CAP>],
-            ) -> Result<HashMap<SmallString<CAP>, Self::Value>, Self::Error> {
-                let mut m = HashMap::new();
-                m.insert("HELLO".into(), "WORLD".into());
-                Ok(m)
+            ) -> impl Future<Output = Result<HashMap<SmallString<CAP>, Self::Value>, Self::Error>>
+            {
+                async move {
+                    let mut m = HashMap::new();
+                    m.insert("HELLO".into(), "WORLD".into());
+                    Ok(m)
+                }
             }
         }
 
         struct QueryRoot<const CAP: usize>;
 
         #[Object]
-        impl<const CAP: usize, 'a> QueryRoot<CAP> {
-            async fn hello(
+        impl<const CAP: usize> QueryRoot<CAP> {
+            async fn hello<'a>(
                 &self,
                 ctx: &Context<'a>,
             ) -> Result<Option<SmallString<CAP>>, Infallible> {

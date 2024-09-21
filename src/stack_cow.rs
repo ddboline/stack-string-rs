@@ -16,17 +16,6 @@ use crate::MAX_INLINE;
 
 use crate::stack_string::StackString;
 
-#[cfg(feature = "diesel_types")]
-use diesel::{
-    backend::Backend,
-    deserialize::{FromSql as DeFromSql, Result as DeResult},
-    serialize::{Output, Result as SerResult, ToSql as DeToSql},
-    sql_types::Text,
-};
-
-#[cfg(feature = "diesel_types")]
-use std::io::Write;
-
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
@@ -41,8 +30,6 @@ use rweb::openapi::{
 use rweb::hyper::Body;
 
 #[derive(Display, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(feature = "diesel_types", derive(FromSqlRow, AsExpression))]
-#[cfg_attr(feature = "diesel_types", sql_type = "Text")]
 pub enum StackCow<'a> {
     Borrowed(&'a str),
     Owned(StackString),
