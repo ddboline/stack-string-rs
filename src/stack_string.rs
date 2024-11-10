@@ -1,4 +1,5 @@
 use compact_str::CompactString as CompactStr;
+pub use compact_str::ToCompactString;
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -363,7 +364,7 @@ impl From<StackString> for Body {
 #[macro_export]
 macro_rules! format_sstr {
     ($($arg:tt)*) => {
-        $crate::StackString::from(compact_str::ToCompactString::to_compact_string(&core::format_args!($($arg)*)))
+        $crate::StackString::from($crate::stack_string::ToCompactString::to_compact_string(&core::format_args!($($arg)*)))
     }
 }
 
