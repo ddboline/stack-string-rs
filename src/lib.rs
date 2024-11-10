@@ -4,10 +4,15 @@
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::unsafe_derive_deserialize)]
 
+pub mod stack_string;
 pub mod small_string;
 pub mod stack_cow;
-pub mod stack_string;
+pub mod smart_string;
 
-pub use crate::{small_string::SmallString, stack_cow::StackCow, stack_string::StackString};
+pub use crate::{
+    small_string::SmallString, stack_cow::StackCow,
+    stack_string::StackString,
+    smart_string::SmartString,
+};
 
 pub use smartstring::MAX_INLINE;

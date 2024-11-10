@@ -1,6 +1,6 @@
-use compact_str::CompactString as CompactStr;
 use derive_more::{Deref, DerefMut, Display, From, Index, IndexMut, Into};
 use serde::{Deserialize, Serialize};
+use smartstring::alias::String as SmartStringInner;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     convert::Infallible,
@@ -12,6 +12,8 @@ use std::{
     str::{FromStr, Utf8Error},
     string::FromUtf8Error,
 };
+
+use crate::MAX_INLINE;
 
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
@@ -48,12 +50,12 @@ use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value
     PartialOrd,
     Ord,
 )]
-pub struct StackString(CompactStr);
+pub struct SmartString(SmartStringInner);
 
-impl StackString {
+impl SmartString {
     #[must_use]
     pub fn new() -> Self {
-        Self(CompactStr::new(""))
+        Self(SmartStringInner::new())
     }
 
     #[must_use]
@@ -66,25 +68,62 @@ impl StackString {
         Self(self.0.split_off(index))
     }
 
-    /// Construct a `StackString` from a `&[u8]`
+    /// Construct a `SmartString` from a `&[u8]`
     /// # Errors
     ///
     /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8(v: &[u8]) -> Result<Self, Utf8Error> {
-        CompactStr::from_utf8(v).map(Self)
+        str::from_utf8(v).map(Into::into)
     }
 
-    /// Construct a `StackString` from a `Vec<u8>`
+    /// Construct a `SmartString` from a `Vec<u8>`
     /// # Errors
     ///
     /// Will return an Error if the byte slice is not utf8 compliant
     pub fn from_utf8_vec(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
-        String::from_utf8(vec).map(|s| Self(CompactStr::from_string_buffer(s)))
+        String::from_utf8(vec).map(Into::into)
     }
 
     #[must_use]
     pub fn from_utf8_lossy(v: &[u8]) -> Self {
-        Self(CompactStr::from_utf8_lossy(v))
+        if v.len() > MAX_INLINE {
+            match String::from_utf8_lossy(v) {
+                Cow::Borrowed(s) => s.into(),
+                Cow::Owned(s) => s.into(),
+            }
+        } else {
+            let (v, up_to, error_len) = match str::from_utf8(v) {
+                Ok(s) => return s.into(),
+                Err(error) => (v, error.valid_up_to(), error.error_len()),
+            };
+            let mut buf = SmartString::new();
+            let (valid, after_valid) = v.split_at(up_to);
+            buf.push_str(unsafe { str::from_utf8_unchecked(valid) });
+            buf.push('\u{FFFD}');
+            let mut input = after_valid;
+            if let Some(invalid_sequence_length) = error_len {
+                input = &after_valid[invalid_sequence_length..];
+            }
+            loop {
+                match str::from_utf8(input) {
+                    Ok(s) => {
+                        buf.push_str(s);
+                        break;
+                    }
+                    Err(error) => {
+                        let (valid, after_valid) = input.split_at(error.valid_up_to());
+                        buf.push_str(unsafe { str::from_utf8_unchecked(valid) });
+                        buf.push('\u{FFFD}');
+                        if let Some(invalid_sequence_length) = error.error_len() {
+                            input = &after_valid[invalid_sequence_length..];
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            buf
+        }
     }
 
     /// # Panics
@@ -96,55 +135,51 @@ impl StackString {
         write!(s, "{buf}").unwrap();
         s
     }
-
-    pub fn is_inline(&self) -> bool {
-        !self.is_heap_allocated()
-    }
 }
 
-impl From<StackString> for String {
-    fn from(item: StackString) -> Self {
+impl From<SmartString> for String {
+    fn from(item: SmartString) -> Self {
         item.0.into()
     }
 }
 
-impl From<&StackString> for String {
-    fn from(item: &StackString) -> Self {
+impl From<&SmartString> for String {
+    fn from(item: &SmartString) -> Self {
         item.as_str().into()
     }
 }
 
-impl From<&StackString> for StackString {
-    fn from(item: &StackString) -> Self {
+impl From<&SmartString> for SmartString {
+    fn from(item: &SmartString) -> Self {
         item.clone()
     }
 }
 
-impl From<String> for StackString {
+impl From<String> for SmartString {
     fn from(item: String) -> Self {
         Self(item.into())
     }
 }
 
-impl From<&String> for StackString {
+impl From<&String> for SmartString {
     fn from(item: &String) -> Self {
         Self(item.into())
     }
 }
 
-impl From<&str> for StackString {
+impl From<&str> for SmartString {
     fn from(item: &str) -> Self {
         Self(item.into())
     }
 }
 
-impl<'a> From<&'a StackString> for &'a str {
-    fn from(item: &StackString) -> &str {
+impl<'a> From<&'a SmartString> for &'a str {
+    fn from(item: &SmartString) -> &str {
         item.as_str()
     }
 }
 
-impl<'a> From<Cow<'a, str>> for StackString {
+impl<'a> From<Cow<'a, str>> for SmartString {
     fn from(item: Cow<'a, str>) -> Self {
         match item {
             Cow::Borrowed(s) => s.into(),
@@ -153,140 +188,140 @@ impl<'a> From<Cow<'a, str>> for StackString {
     }
 }
 
-impl From<StackString> for Cow<'_, str> {
-    fn from(item: StackString) -> Self {
+impl From<SmartString> for Cow<'_, str> {
+    fn from(item: SmartString) -> Self {
         Cow::Owned(item.into())
     }
 }
 
-impl Borrow<str> for StackString {
+impl Borrow<str> for SmartString {
     fn borrow(&self) -> &str {
         self.0.borrow()
     }
 }
 
-impl BorrowMut<str> for StackString {
+impl BorrowMut<str> for SmartString {
     fn borrow_mut(&mut self) -> &mut str {
         self.0.borrow_mut()
     }
 }
 
-impl AsRef<str> for StackString {
+impl AsRef<str> for SmartString {
     fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }
 
-impl AsRef<[u8]> for StackString {
+impl AsRef<[u8]> for SmartString {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
 }
 
-impl AsRef<OsStr> for StackString {
+impl AsRef<OsStr> for SmartString {
     fn as_ref(&self) -> &OsStr {
         self.as_str().as_ref()
     }
 }
 
-impl AsRef<Path> for StackString {
+impl AsRef<Path> for SmartString {
     fn as_ref(&self) -> &Path {
         Path::new(self)
     }
 }
 
-impl FromStr for StackString {
+impl FromStr for SmartString {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(s.into())
     }
 }
 
-impl<'a> PartialEq<Cow<'a, str>> for StackString {
+impl<'a> PartialEq<Cow<'a, str>> for SmartString {
     #[inline]
     fn eq(&self, other: &Cow<'a, str>) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialOrd<Cow<'a, str>> for StackString {
+impl<'a> PartialOrd<Cow<'a, str>> for SmartString {
     fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl PartialEq<String> for StackString {
+impl PartialEq<String> for SmartString {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl PartialOrd<String> for StackString {
+impl PartialOrd<String> for SmartString {
     fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl PartialEq<str> for StackString {
+impl PartialEq<str> for SmartString {
     #[inline]
     fn eq(&self, other: &str) -> bool {
         PartialEq::eq(&self.0, other)
     }
 }
 
-impl PartialOrd<str> for StackString {
+impl PartialOrd<str> for SmartString {
     fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], other)
     }
 }
 
-impl<'a> PartialEq<&'a str> for StackString {
+impl<'a> PartialEq<&'a str> for SmartString {
     #[inline]
     fn eq(&self, other: &&'a str) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialOrd<&'a str> for StackString {
+impl<'a> PartialOrd<&'a str> for SmartString {
     fn partial_cmp(&self, other: &&'a str) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl PartialEq<StackString> for str {
-    fn eq(&self, other: &StackString) -> bool {
+impl PartialEq<SmartString> for str {
+    fn eq(&self, other: &SmartString) -> bool {
         PartialEq::eq(self, &other[..])
     }
 }
 
-impl PartialOrd<StackString> for str {
-    fn partial_cmp(&self, other: &StackString) -> Option<std::cmp::Ordering> {
+impl PartialOrd<SmartString> for str {
+    fn partial_cmp(&self, other: &SmartString) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(self, &other[..])
     }
 }
 
-impl<'a> PartialEq<StackString> for &'a str {
-    fn eq(&self, other: &StackString) -> bool {
+impl<'a> PartialEq<SmartString> for &'a str {
+    fn eq(&self, other: &SmartString) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialOrd<StackString> for &'a str {
-    fn partial_cmp(&self, other: &StackString) -> Option<std::cmp::Ordering> {
+impl<'a> PartialOrd<SmartString> for &'a str {
+    fn partial_cmp(&self, other: &SmartString) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl FromIterator<char> for StackString {
+impl FromIterator<char> for SmartString {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
-        let s = CompactStr::from_iter(iter);
+        let s = SmartStringInner::from_iter(iter);
         Self(s)
     }
 }
 
 #[cfg(feature = "postgres_types")]
-impl<'a> FromSql<'a> for StackString {
+impl<'a> FromSql<'a> for SmartString {
     fn from_sql(
         ty: &Type,
         raw: &'a [u8],
@@ -301,7 +336,7 @@ impl<'a> FromSql<'a> for StackString {
 }
 
 #[cfg(feature = "postgres_types")]
-impl ToSql for StackString {
+impl ToSql for SmartString {
     fn to_sql(
         &self,
         ty: &Type,
@@ -330,7 +365,7 @@ impl ToSql for StackString {
 }
 
 #[cfg(feature = "rweb-openapi")]
-impl Entity for StackString {
+impl Entity for SmartString {
     fn type_name() -> Cow<'static, str> {
         <str as Entity>::type_name()
     }
@@ -342,7 +377,7 @@ impl Entity for StackString {
 }
 
 #[cfg(feature = "rweb-openapi")]
-impl ResponseEntity for StackString {
+impl ResponseEntity for SmartString {
     #[inline]
     fn describe_responses(comp_d: &mut ComponentDescriptor) -> Responses {
         String::describe_responses(comp_d)
@@ -350,31 +385,31 @@ impl ResponseEntity for StackString {
 }
 
 #[cfg(feature = "rweb-openapi")]
-impl From<StackString> for Body {
+impl From<SmartString> for Body {
     #[inline]
-    fn from(s: StackString) -> Body {
+    fn from(s: SmartString) -> Body {
         let s: String = s.into();
         Body::from(s)
     }
 }
 
 #[macro_export]
-macro_rules! format_cstr {
+macro_rules! format_sstr {
     ($($arg:tt)*) => {{
         use std::fmt::Write;
-        let mut buf = $crate::StackString::new();
+        let mut buf = $crate::SmartString::new();
         std::write!(buf, "{}", std::format_args!($($arg)*)).unwrap();
         buf
     }}
 }
 
-/// Allow StackString to be used as graphql scalar value
+/// Allow SmartString to be used as graphql scalar value
 #[cfg(feature = "async_graphql")]
 #[Scalar]
-impl ScalarType for StackString {
+impl ScalarType for SmartString {
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(s) = value {
-            let s: StackString = s.into();
+            let s: SmartString = s.into();
             Ok(s)
         } else {
             Err(InputValueError::expected_type(value))
@@ -397,18 +432,18 @@ mod tests {
     #[cfg(feature = "async_graphql")]
     use std::future::Future;
 
-    use crate::StackString;
+    use crate::SmartString;
 
     #[test]
     fn test_default() {
-        assert_eq!(StackString::new(), StackString::default());
+        assert_eq!(SmartString::new(), SmartString::default());
     }
 
     #[test]
     fn test_split_off() {
         let mut s0 = "hello there".to_string();
         let s1 = s0.split_off(3);
-        let mut s2: StackString = "hello there".into();
+        let mut s2: SmartString = "hello there".into();
         let s3 = s2.split_off(3);
         assert_eq!(s0.as_str(), s2.as_str());
         assert_eq!(s1.as_str(), s3.as_str());
@@ -419,12 +454,12 @@ mod tests {
         let mut rng = thread_rng();
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
-        let s1 = StackString::from_utf8(&v).unwrap();
+        let s1 = SmartString::from_utf8(&v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
-        let s1 = StackString::from_utf8(&v);
+        let s1 = SmartString::from_utf8(&v);
 
         match s0 {
             Ok(s) => assert_eq!(s.as_str(), s1.unwrap().as_str()),
@@ -437,12 +472,12 @@ mod tests {
         let mut rng = thread_rng();
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
-        let s1 = StackString::from_utf8_vec(v).unwrap();
+        let s1 = SmartString::from_utf8_vec(v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
         let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
-        let s1 = StackString::from_utf8_vec(v);
+        let s1 = SmartString::from_utf8_vec(v);
 
         match s0 {
             Ok(s) => assert_eq!(s.as_str(), s1.unwrap().as_str()),
@@ -451,25 +486,25 @@ mod tests {
     }
 
     #[test]
-    fn test_string_from_compact_string() {
-        let s0 = StackString::from("Hello there");
+    fn test_string_from_stackstring() {
+        let s0 = SmartString::from("Hello there");
         let s1: String = s0.clone().into();
         assert_eq!(s0.as_str(), s1.as_str());
     }
 
     #[test]
-    fn test_compact_string_from_string() {
+    fn test_stackstring_from_string() {
         let s0 = String::from("Hello there");
-        let s1: StackString = s0.clone().into();
+        let s1: SmartString = s0.clone().into();
         assert_eq!(s0.as_str(), s1.as_str());
-        let s1: StackString = (&s0).into();
+        let s1: SmartString = (&s0).into();
         assert_eq!(s0.as_str(), s1.as_str());
     }
 
     #[test]
     fn test_borrow() {
         use std::borrow::Borrow;
-        let s = StackString::from("Hello");
+        let s = SmartString::from("Hello");
         let st: &str = s.borrow();
         assert_eq!(st, "Hello");
     }
@@ -478,7 +513,7 @@ mod tests {
     fn test_as_ref() {
         use std::path::Path;
 
-        let s = StackString::from("Hello");
+        let s = SmartString::from("Hello");
         let st: &str = s.as_ref();
         assert_eq!(st, s.as_str());
         let bt: &[u8] = s.as_ref();
@@ -489,8 +524,8 @@ mod tests {
 
     #[test]
     fn test_from_str() {
-        let s = StackString::from("Hello");
-        let st: StackString = "Hello".parse().unwrap();
+        let s = SmartString::from("Hello");
+        let st: SmartString = "Hello".parse().unwrap();
         assert_eq!(s, st);
     }
 
@@ -499,44 +534,44 @@ mod tests {
         use std::path::Path;
         let p = Path::new("Hello");
         let ps = p.to_string_lossy();
-        let s = StackString::from("Hello");
+        let s = SmartString::from("Hello");
         assert_eq!(s, ps);
     }
 
     #[test]
     fn test_partial_eq_string() {
-        assert_eq!(StackString::from("Hello"), String::from("Hello"));
-        assert_eq!(StackString::from("Hello"), "Hello");
-        assert_eq!(&StackString::from("Hello"), "Hello");
-        assert!(StackString::from("alpha") < "beta");
-        assert!("beta" > StackString::from("alpha"));
+        assert_eq!(SmartString::from("Hello"), String::from("Hello"));
+        assert_eq!(SmartString::from("Hello"), "Hello");
+        assert_eq!(&SmartString::from("Hello"), "Hello");
+        assert!(SmartString::from("alpha") < "beta");
+        assert!("beta" > SmartString::from("alpha"));
     }
 
     #[test]
     fn test_from_iterator_char() {
         let mut rng = thread_rng();
         let v: Vec<char> = (0..20).map(|_| rng.gen::<char>()).collect();
-        let s0: StackString = v.iter().map(|x| *x).collect();
+        let s0: SmartString = v.iter().map(|x| *x).collect();
         let s1: String = v.iter().map(|x| *x).collect();
         assert_eq!(s0, s1);
     }
 
     #[test]
-    fn test_contains_compact_string() {
-        let a: StackString = "hey there".into();
-        let b: StackString = "hey".into();
+    fn test_contains_stackstring() {
+        let a: SmartString = "hey there".into();
+        let b: SmartString = "hey".into();
         assert!(a.contains(b.as_str()));
     }
 
     #[test]
     fn test_contains_char() {
-        let a: StackString = "hey there".into();
+        let a: SmartString = "hey there".into();
         assert!(a.contains(' '));
     }
 
     #[test]
     fn test_equality() {
-        let s: StackString = "hey".into();
+        let s: SmartString = "hey".into();
         assert_eq!(Some(&s).map(Into::into), Some("hey"));
     }
 
@@ -550,18 +585,18 @@ mod tests {
     fn test_from_sql() {
         let raw = b"Hello There";
         let t = Type::TEXT;
-        let s = StackString::from_sql(&t, raw).unwrap();
-        assert_eq!(s, StackString::from("Hello There"));
+        let s = SmartString::from_sql(&t, raw).unwrap();
+        assert_eq!(s, SmartString::from("Hello There"));
 
-        assert!(<StackString as FromSql>::accepts(&t));
+        assert!(<SmartString as FromSql>::accepts(&t));
     }
 
     #[cfg(feature = "postgres_types")]
     #[test]
     fn test_to_sql() {
-        let s = StackString::from("Hello There");
+        let s = SmartString::from("Hello There");
         let t = Type::TEXT;
-        assert!(<StackString as ToSql>::accepts(&t));
+        assert!(<SmartString as ToSql>::accepts(&t));
         let mut buf = BytesMut::new();
         match s.to_sql(&t, &mut buf).unwrap() {
             IsNull::Yes => assert!(false),
@@ -583,16 +618,16 @@ mod tests {
         }
 
         let t = Test {};
-        let s = StackString::from_display(t);
-        assert_eq!(s, StackString::from("THIS IS A TEST"));
+        let s = SmartString::from_display(t);
+        assert_eq!(s, SmartString::from("THIS IS A TEST"));
     }
 
     #[test]
-    fn test_format_cstr() {
-        use crate::format_cstr;
+    fn test_format_sstr() {
+        use crate::format_sstr;
 
-        let s = format_cstr!("This is a test {}", 22);
-        assert_eq!(s, StackString::from("This is a test 22"));
+        let s = format_sstr!("This is a test {}", 22);
+        assert_eq!(s, SmartString::from("This is a test 22"));
     }
 
     #[test]
@@ -601,16 +636,16 @@ mod tests {
         v.extend_from_slice("this is a test".as_bytes());
         v.push(0xff);
         v.extend_from_slice("yes".as_bytes());
-        let s = StackString::from_utf8_lossy(&v);
+        let s = SmartString::from_utf8_lossy(&v);
         assert_eq!(s.len(), 20);
-        assert_eq!(s.is_heap_allocated(), false);
+        assert_eq!(s.is_inline(), true);
     }
 
     #[test]
     fn test_serde() {
         use serde::Deserialize;
 
-        let s = StackString::from("HELLO");
+        let s = SmartString::from("HELLO");
         let t = "HELLO";
         let s = serde_json::to_vec(&s).unwrap();
         let t = serde_json::to_vec(t).unwrap();
@@ -620,7 +655,7 @@ mod tests {
 
         #[derive(Deserialize)]
         struct A {
-            a: StackString,
+            a: SmartString,
         }
 
         #[derive(Deserialize)]
@@ -635,7 +670,7 @@ mod tests {
 
     #[cfg(feature = "async_graphql")]
     #[test]
-    fn test_compact_string_async_graphql() {
+    fn test_stackstring_async_graphql() {
         use async_graphql::{
             dataloader::{DataLoader, Loader},
             Context, EmptyMutation, EmptySubscription, Object, Schema,
@@ -643,23 +678,23 @@ mod tests {
         use async_trait::async_trait;
         use std::{collections::HashMap, convert::Infallible};
 
-        struct StackStringLoader;
+        struct SmartStringLoader;
 
-        impl StackStringLoader {
+        impl SmartStringLoader {
             fn new() -> Self {
                 Self
             }
         }
 
         #[async_trait]
-        impl Loader<StackString> for StackStringLoader {
-            type Value = StackString;
+        impl Loader<SmartString> for SmartStringLoader {
+            type Value = SmartString;
             type Error = Infallible;
 
             fn load(
                 &self,
-                _: &[StackString],
-            ) -> impl Future<Output = Result<HashMap<StackString, Self::Value>, Self::Error>>
+                _: &[SmartString],
+            ) -> impl Future<Output = Result<HashMap<SmartString, Self::Value>, Self::Error>>
             {
                 async move {
                     let mut m = HashMap::new();
@@ -676,9 +711,9 @@ mod tests {
             async fn hello<'a>(
                 &self,
                 ctx: &Context<'a>,
-            ) -> Result<Option<StackString>, Infallible> {
+            ) -> Result<Option<SmartString>, Infallible> {
                 let hello = ctx
-                    .data::<DataLoader<StackStringLoader>>()
+                    .data::<DataLoader<SmartStringLoader>>()
                     .unwrap()
                     .load_one("hello".into())
                     .await
@@ -687,11 +722,11 @@ mod tests {
             }
         }
 
-        let expected_sdl = include_str!("../tests/data/sdl_file_compactstring.txt");
+        let expected_sdl = include_str!("../tests/data/sdl_file_stackstring.txt");
 
         let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
             .data(DataLoader::new(
-                StackStringLoader::new(),
+                SmartStringLoader::new(),
                 tokio::task::spawn,
             ))
             .finish();

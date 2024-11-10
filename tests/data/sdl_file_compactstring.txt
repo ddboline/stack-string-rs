@@ -3,13 +3,13 @@
 
 
 type QueryRoot {
-	hello: SmartString
+	hello: StackString
 }
 
 """
-Allow SmartString to be used as graphql scalar value
+Allow StackString to be used as graphql scalar value
 """
-scalar SmartString
+scalar StackString
 
 
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
