@@ -35,7 +35,7 @@ use rweb::hyper::Body;
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
-use crate::{StackString, MAX_INLINE};
+use crate::StackString;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SmallString<const CAP: usize> {
@@ -370,11 +370,9 @@ impl<const CAP: usize> From<&StackString> for SmallString<CAP> {
 
 impl<const CAP: usize> From<SmallString<CAP>> for StackString {
     fn from(item: SmallString<CAP>) -> Self {
-        if item.len() > MAX_INLINE {
-            let s: String = item.into();
-            s.into()
-        } else {
-            StackString::from(item.as_str())
+        match item {
+            SmallString::Inline(s) => StackString::from(s.as_str()),
+            SmallString::Boxed(s) => s.into(),
         }
     }
 }

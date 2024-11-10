@@ -97,6 +97,8 @@ impl StackString {
         s
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_inline(&self) -> bool {
         !self.is_heap_allocated()
     }
@@ -359,13 +361,10 @@ impl From<StackString> for Body {
 }
 
 #[macro_export]
-macro_rules! format_cstr {
-    ($($arg:tt)*) => {{
-        use std::fmt::Write;
-        let mut buf = $crate::StackString::new();
-        std::write!(buf, "{}", std::format_args!($($arg)*)).unwrap();
-        buf
-    }}
+macro_rules! format_sstr {
+    ($($arg:tt)*) => {
+        $crate::StackString::from(compact_str::ToCompactString::to_compact_string(&core::format_args!($($arg)*)))
+    }
 }
 
 /// Allow StackString to be used as graphql scalar value
@@ -588,10 +587,10 @@ mod tests {
     }
 
     #[test]
-    fn test_format_cstr() {
-        use crate::format_cstr;
+    fn test_format_sstr() {
+        use crate::format_sstr;
 
-        let s = format_cstr!("This is a test {}", 22);
+        let s = format_sstr!("This is a test {}", 22);
         assert_eq!(s, StackString::from("This is a test 22"));
     }
 

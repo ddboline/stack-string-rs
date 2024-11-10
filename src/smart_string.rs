@@ -13,7 +13,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-use crate::MAX_INLINE;
+use smartstring::MAX_INLINE;
 
 #[cfg(feature = "postgres_types")]
 use bytes::BytesMut;
@@ -394,7 +394,7 @@ impl From<SmartString> for Body {
 }
 
 #[macro_export]
-macro_rules! format_sstr {
+macro_rules! format_smartstr {
     ($($arg:tt)*) => {{
         use std::fmt::Write;
         let mut buf = $crate::SmartString::new();
@@ -623,10 +623,10 @@ mod tests {
     }
 
     #[test]
-    fn test_format_sstr() {
-        use crate::format_sstr;
+    fn test_format_smartstr() {
+        use crate::format_smartstr;
 
-        let s = format_sstr!("This is a test {}", 22);
+        let s = format_smartstr!("This is a test {}", 22);
         assert_eq!(s, SmartString::from("This is a test 22"));
     }
 

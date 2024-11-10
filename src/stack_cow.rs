@@ -12,8 +12,6 @@ use std::{
     string::FromUtf8Error,
 };
 
-use crate::MAX_INLINE;
-
 use crate::stack_string::StackString;
 
 #[cfg(feature = "postgres_types")]
@@ -91,11 +89,7 @@ impl<'a> StackCow<'a> {
 
     #[must_use]
     pub fn from_utf8_lossy(v: &'a [u8]) -> Self {
-        if v.len() > MAX_INLINE {
-            String::from_utf8_lossy(v).into()
-        } else {
-            StackString::from_utf8_lossy(v).into()
-        }
+        StackString::from_utf8_lossy(v).into()
     }
 
     /// # Panics

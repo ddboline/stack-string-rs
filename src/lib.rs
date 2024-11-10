@@ -7,12 +7,15 @@
 pub mod stack_string;
 pub mod small_string;
 pub mod stack_cow;
+
+#[cfg(feature = "smart_string")]
 pub mod smart_string;
 
 pub use crate::{
-    small_string::SmallString, stack_cow::StackCow,
+    small_string::SmallString,
+    stack_cow::StackCow,
     stack_string::StackString,
-    smart_string::SmartString,
 };
 
-pub use smartstring::MAX_INLINE;
+#[cfg(feature = "smart_string")]
+pub use crate::smart_string::SmartString;

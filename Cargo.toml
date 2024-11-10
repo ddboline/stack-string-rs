@@ -14,9 +14,9 @@ readme = "README.md"
 [dependencies]
 serde = {version="1.0", features=["derive"]}
 derive_more = {version="1.0", features=["full"]}
-smartstring = {version="1.0", features=["serde"]}
 compact_str = {version="0.8", features=["serde", "markup", "bytes"]}
 arrayvec = {version="0.7"}
+smartstring = {version="1.0", features=["serde"], optional=true}
 postgres-types = {version="0.2", optional=true}
 bytes = {version="1.8", optional=true}
 async-graphql = {version="7.0", features=["dataloader"], optional=true}
@@ -30,6 +30,7 @@ async-trait = "0.1"
 
 [features]
 default = []
+smart_string = ["smartstring"]
 postgres_types = ["postgres-types", "bytes"]
 rweb-openapi = ["rweb"]
 async_graphql = ["async-graphql"]
