@@ -398,10 +398,12 @@ mod tests {
     use std::future::Future;
 
     use crate::StackString;
+    use crate::MAX_INLINE;
 
     #[test]
     fn test_default() {
         assert_eq!(StackString::new(), StackString::default());
+        assert_eq!(MAX_INLINE, 24);
     }
 
     #[test]

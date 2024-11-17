@@ -11,6 +11,8 @@ pub mod stack_cow;
 #[cfg(feature = "smart_string")]
 pub mod smart_string;
 
+pub const MAX_INLINE: usize = std::mem::size_of::<String>();
+
 pub use crate::{
     small_string::SmallString,
     stack_cow::StackCow,
