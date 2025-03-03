@@ -378,7 +378,7 @@ impl<'a> From<StackCow<'a>> for Body {
 
 #[cfg(test)]
 mod tests {
-    use rand::{thread_rng, Rng};
+    use rand::{rng as thread_rng, Rng};
     use serde::Deserialize;
 
     use crate::{StackCow, StackString};
@@ -391,12 +391,12 @@ mod tests {
     #[test]
     fn test_from_utf8() {
         let mut rng = thread_rng();
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
         let s1 = StackCow::from_utf8(v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
         let s1 = StackCow::from_utf8(v);
 
@@ -474,7 +474,7 @@ mod tests {
     #[test]
     fn test_from_iterator_char() {
         let mut rng = thread_rng();
-        let v: Vec<char> = (0..20).map(|_| rng.gen::<char>()).collect();
+        let v: Vec<char> = (0..20).map(|_| rng.random::<char>()).collect();
         let s0: StackCow = v.iter().map(|x| *x).collect();
         let s1: String = v.iter().map(|x| *x).collect();
         assert_eq!(s0, s1);

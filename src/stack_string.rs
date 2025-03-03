@@ -392,13 +392,12 @@ impl ScalarType for StackString {
 
 #[cfg(test)]
 mod tests {
-    use rand::{thread_rng, Rng};
+    use rand::{rng as thread_rng, Rng};
 
     #[cfg(feature = "async_graphql")]
     use std::future::Future;
 
-    use crate::StackString;
-    use crate::MAX_INLINE;
+    use crate::{StackString, MAX_INLINE};
 
     #[test]
     fn test_default() {
@@ -419,12 +418,12 @@ mod tests {
     #[test]
     fn test_from_utf8() {
         let mut rng = thread_rng();
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
         let s1 = StackString::from_utf8(&v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
         let s1 = StackString::from_utf8(&v);
 
@@ -437,12 +436,12 @@ mod tests {
     #[test]
     fn test_from_utf8_vec() {
         let mut rng = thread_rng();
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>() & 0x7f).collect();
         let s0 = String::from_utf8(v.clone()).unwrap();
         let s1 = StackString::from_utf8_vec(v).unwrap();
         assert_eq!(s0.as_str(), s1.as_str());
 
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>()).collect();
         let s0 = String::from_utf8(v.clone());
         let s1 = StackString::from_utf8_vec(v);
 
@@ -517,7 +516,7 @@ mod tests {
     #[test]
     fn test_from_iterator_char() {
         let mut rng = thread_rng();
-        let v: Vec<char> = (0..20).map(|_| rng.gen::<char>()).collect();
+        let v: Vec<char> = (0..20).map(|_| rng.random::<char>()).collect();
         let s0: StackString = v.iter().map(|x| *x).collect();
         let s1: String = v.iter().map(|x| *x).collect();
         assert_eq!(s0, s1);

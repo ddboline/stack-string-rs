@@ -613,7 +613,7 @@ impl<const CAP: usize> ScalarType for SmallString<CAP> {
 #[cfg(test)]
 mod tests {
     use arrayvec::ArrayString;
-    use rand::{thread_rng, Rng};
+    use rand::{rng as thread_rng, Rng};
     use std::fmt::Write;
 
     #[cfg(feature = "async_graphql")]
@@ -654,13 +654,13 @@ mod tests {
     #[test]
     fn test_from_utf8() {
         let mut rng = thread_rng();
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>() & 0x7f).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>() & 0x7f).collect();
         let s0 = std::str::from_utf8(&v).unwrap();
         let s1 = SmallString::<20>::from_utf8(&v).unwrap();
         assert_eq!(s0, s1.as_str());
         assert!(s1.is_inline());
 
-        let v: Vec<_> = (0..20).map(|_| rng.gen::<u8>()).collect();
+        let v: Vec<_> = (0..20).map(|_| rng.random::<u8>()).collect();
         let s0 = std::str::from_utf8(&v);
         let s1 = SmallString::<20>::from_utf8(&v);
 
@@ -733,7 +733,7 @@ mod tests {
     #[test]
     fn test_from_iterator_char() {
         let mut rng = thread_rng();
-        let v: Vec<char> = (0..20).map(|_| rng.gen::<char>()).collect();
+        let v: Vec<char> = (0..20).map(|_| rng.random::<char>()).collect();
         let s0: SmallString<20> = v.iter().map(|x| *x).collect();
         let s1: String = v.iter().map(|x| *x).collect();
         assert_eq!(s0, s1);

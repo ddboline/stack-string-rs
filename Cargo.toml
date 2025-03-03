@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -13,17 +13,17 @@ readme = "README.md"
 
 [dependencies]
 serde = {version="1.0", features=["derive"]}
-derive_more = {version="1.0", features=["full"]}
-compact_str = {version="0.8", features=["serde", "markup", "bytes"]}
+derive_more = {version="2.0", features=["full"]}
+compact_str = {version="0.9", features=["serde", "markup", "bytes"]}
 arrayvec = {version="0.7"}
 smartstring = {version="1.0", features=["serde"], optional=true}
 postgres-types = {version="0.2", optional=true}
-bytes = {version="1.8", optional=true}
+bytes = {version="1.10", optional=true}
 async-graphql = {version="7.0", features=["dataloader"], optional=true}
 rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi"], optional=true, tag="0.15.2"}
 
 [dev-dependencies]
-rand = "0.8"
+rand = "0.9"
 serde_json = "1.0"
 tokio = {version = "1.41", features=["rt", "macros", "rt-multi-thread"]}
 async-trait = "0.1"
