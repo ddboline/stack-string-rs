@@ -20,13 +20,8 @@ use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
-#[cfg(feature = "rweb-openapi")]
-use rweb::openapi::{
-    ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
-};
-
-#[cfg(feature = "rweb-openapi")]
-use rweb::hyper::Body;
+#[cfg(feature = "utoipa_types")]
+use utoipa::{ToSchema, PartialSchema};
 
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
@@ -364,32 +359,17 @@ impl ToSql for SmartString {
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl Entity for SmartString {
-    fn type_name() -> Cow<'static, str> {
-        <str as Entity>::type_name()
-    }
-
-    #[inline]
-    fn describe(comp_d: &mut ComponentDescriptor) -> ComponentOrInlineSchema {
-        str::describe(comp_d)
+#[cfg(feature = "utoipa_types")]
+impl PartialSchema for SmartString {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        str::schema()
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl ResponseEntity for SmartString {
-    #[inline]
-    fn describe_responses(comp_d: &mut ComponentDescriptor) -> Responses {
-        String::describe_responses(comp_d)
-    }
-}
-
-#[cfg(feature = "rweb-openapi")]
-impl From<SmartString> for Body {
-    #[inline]
-    fn from(s: SmartString) -> Body {
-        let s: String = s.into();
-        Body::from(s)
+#[cfg(feature = "utoipa_types")]
+impl ToSchema for SmartString {
+    fn name() -> Cow<'static, str> {
+        str::name()
     }
 }
 

@@ -24,13 +24,8 @@ use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
-#[cfg(feature = "rweb-openapi")]
-use rweb::openapi::{
-    ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
-};
-
-#[cfg(feature = "rweb-openapi")]
-use rweb::hyper::Body;
+#[cfg(feature = "utoipa_types")]
+use utoipa::{ToSchema, PartialSchema};
 
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
@@ -542,34 +537,20 @@ impl<const CAP: usize> ToSql for SmallString<CAP> {
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<const CAP: usize> Entity for SmallString<CAP> {
-    fn type_name() -> Cow<'static, str> {
-        str::type_name()
-    }
-
-    #[inline]
-    fn describe(comp_d: &mut ComponentDescriptor) -> ComponentOrInlineSchema {
-        str::describe(comp_d)
+#[cfg(feature = "utoipa_types")]
+impl<const CAP: usize> PartialSchema for SmallString<CAP> {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        str::schema()
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<const CAP: usize> ResponseEntity for SmallString<CAP> {
-    #[inline]
-    fn describe_responses(comp_d: &mut ComponentDescriptor) -> Responses {
-        String::describe_responses(comp_d)
+#[cfg(feature = "utoipa_types")]
+impl<const CAP: usize> ToSchema for SmallString<CAP> {
+    fn name() -> Cow<'static, str> {
+        str::name()
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<const CAP: usize> From<SmallString<CAP>> for Body {
-    #[inline]
-    fn from(s: SmallString<CAP>) -> Body {
-        let s: String = s.into();
-        Body::from(s)
-    }
-}
 
 impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {

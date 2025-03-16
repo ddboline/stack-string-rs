@@ -19,13 +19,8 @@ use bytes::BytesMut;
 #[cfg(feature = "postgres_types")]
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
-#[cfg(feature = "rweb-openapi")]
-use rweb::openapi::{
-    ComponentDescriptor, ComponentOrInlineSchema, Entity, ResponseEntity, Responses,
-};
-
-#[cfg(feature = "rweb-openapi")]
-use rweb::hyper::Body;
+#[cfg(feature = "utoipa_types")]
+use utoipa::{ToSchema, PartialSchema};
 
 #[derive(Display, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum StackCow<'a> {
@@ -347,34 +342,20 @@ impl<'a> ToSql for StackCow<'a> {
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<'a> Entity for StackCow<'a> {
-    fn type_name() -> Cow<'static, str> {
-        str::type_name()
-    }
-
-    #[inline]
-    fn describe(comp_d: &mut ComponentDescriptor) -> ComponentOrInlineSchema {
-        str::describe(comp_d)
+#[cfg(feature = "utoipa_types")]
+impl<'a> PartialSchema for StackCow<'a> {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        str::schema()
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<'a> ResponseEntity for StackCow<'a> {
-    #[inline]
-    fn describe_responses(comp_d: &mut ComponentDescriptor) -> Responses {
-        String::describe_responses(comp_d)
+#[cfg(feature = "utoipa_types")]
+impl<'a> ToSchema for StackCow<'a> {
+    fn name() -> Cow<'static, str> {
+        str::name()
     }
 }
 
-#[cfg(feature = "rweb-openapi")]
-impl<'a> From<StackCow<'a>> for Body {
-    #[inline]
-    fn from(s: StackCow) -> Body {
-        let s: String = s.into();
-        Body::from(s)
-    }
-}
 
 #[cfg(test)]
 mod tests {
