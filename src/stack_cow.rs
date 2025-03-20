@@ -22,6 +22,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 #[cfg(feature = "utoipa_types")]
 use utoipa::{ToSchema, PartialSchema};
 
+#[cfg(feature = "axum_types")]
+use axum::response::IntoResponse;
+
 #[derive(Display, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum StackCow<'a> {
     Borrowed(&'a str),
@@ -356,6 +359,13 @@ impl<'a> ToSchema for StackCow<'a> {
     }
 }
 
+#[cfg(feature = "axum_types")]
+impl<'a> IntoResponse for StackCow<'a> {
+    fn into_response(self) -> axum::response::Response {
+        let s: String = self.into();
+        s.into_response()
+    }
+}
 
 #[cfg(test)]
 mod tests {

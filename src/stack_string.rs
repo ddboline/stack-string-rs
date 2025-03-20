@@ -22,6 +22,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 #[cfg(feature = "utoipa_types")]
 use utoipa::{ToSchema, PartialSchema};
 
+#[cfg(feature = "axum_types")]
+use axum::response::IntoResponse;
+
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -338,6 +341,14 @@ impl PartialSchema for StackString {
 impl ToSchema for StackString {
     fn name() -> Cow<'static, str> {
         str::name()
+    }
+}
+
+#[cfg(feature = "axum_types")]
+impl IntoResponse for StackString {
+    fn into_response(self) -> axum::response::Response {
+        let s: String = self.into();
+        s.into_response()
     }
 }
 

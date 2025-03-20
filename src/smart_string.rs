@@ -23,6 +23,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 #[cfg(feature = "utoipa_types")]
 use utoipa::{ToSchema, PartialSchema};
 
+#[cfg(feature = "axum_types")]
+use axum::response::IntoResponse;
+
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -372,6 +375,15 @@ impl ToSchema for SmartString {
         str::name()
     }
 }
+
+#[cfg(feature = "axum_types")]
+impl IntoResponse for SmartString {
+    fn into_response(self) -> axum::response::Response {
+        let s: String = self.into();
+        s.into_response()
+    }
+}
+
 
 #[macro_export]
 macro_rules! format_smartstr {

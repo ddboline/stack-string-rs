@@ -27,6 +27,9 @@ use postgres_types::{FromSql, IsNull, ToSql, Type};
 #[cfg(feature = "utoipa_types")]
 use utoipa::{ToSchema, PartialSchema};
 
+#[cfg(feature = "axum_types")]
+use axum::response::IntoResponse;
+
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -551,6 +554,13 @@ impl<const CAP: usize> ToSchema for SmallString<CAP> {
     }
 }
 
+#[cfg(feature = "axum_types")]
+impl<const CAP: usize> IntoResponse for SmallString<CAP> {
+    fn into_response(self) -> axum::response::Response {
+        let s: String = self.into();
+        s.into_response()
+    }
+}
 
 impl<const CAP: usize> FromIterator<char> for SmallString<CAP> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
