@@ -21,7 +21,7 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "utoipa_types")]
-use utoipa::{ToSchema, PartialSchema};
+use utoipa::{PartialSchema, ToSchema};
 
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
@@ -383,7 +383,6 @@ impl IntoResponse for SmartString {
         s.into_response()
     }
 }
-
 
 #[macro_export]
 macro_rules! format_smartstr {

@@ -20,7 +20,7 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "utoipa_types")]
-use utoipa::{ToSchema, PartialSchema};
+use utoipa::{PartialSchema, ToSchema};
 
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
@@ -112,7 +112,7 @@ impl Deref for StackCow<'_> {
     }
 }
 
-impl<'a> Serialize for StackCow<'a> {
+impl Serialize for StackCow<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -130,7 +130,7 @@ impl<'de> Deserialize<'de> for StackCow<'_> {
     }
 }
 
-impl<'a> From<StackString> for StackCow<'a> {
+impl From<StackString> for StackCow<'_> {
     fn from(item: StackString) -> Self {
         Self::Owned(item)
     }
@@ -154,7 +154,7 @@ impl<'a> From<Cow<'a, str>> for StackCow<'a> {
     }
 }
 
-impl<'a> From<StackCow<'a>> for String {
+impl From<StackCow<'_>> for String {
     fn from(item: StackCow) -> Self {
         match item {
             StackCow::Borrowed(s) => s.into(),
@@ -163,13 +163,13 @@ impl<'a> From<StackCow<'a>> for String {
     }
 }
 
-impl<'a> From<&StackCow<'a>> for String {
+impl From<&StackCow<'_>> for String {
     fn from(item: &StackCow) -> Self {
         item.as_str().into()
     }
 }
 
-impl<'a> From<String> for StackCow<'a> {
+impl From<String> for StackCow<'_> {
     fn from(item: String) -> Self {
         Self::Owned(item.into())
     }
@@ -193,70 +193,70 @@ impl<'a> From<&'a StackCow<'a>> for &'a str {
     }
 }
 
-impl<'a> Borrow<str> for StackCow<'a> {
+impl Borrow<str> for StackCow<'_> {
     fn borrow(&self) -> &str {
         self.as_str()
     }
 }
 
-impl<'a> AsRef<str> for StackCow<'a> {
+impl AsRef<str> for StackCow<'_> {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl<'a> AsRef<[u8]> for StackCow<'a> {
+impl AsRef<[u8]> for StackCow<'_> {
     fn as_ref(&self) -> &[u8] {
         self.as_str().as_bytes()
     }
 }
 
-impl<'a> AsRef<OsStr> for StackCow<'a> {
+impl AsRef<OsStr> for StackCow<'_> {
     fn as_ref(&self) -> &OsStr {
         self.as_str().as_ref()
     }
 }
 
-impl<'a> AsRef<Path> for StackCow<'a> {
+impl AsRef<Path> for StackCow<'_> {
     fn as_ref(&self) -> &Path {
         Path::new(self)
     }
 }
 
-impl<'a> FromStr for StackCow<'a> {
+impl FromStr for StackCow<'_> {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::Owned(s.into()))
     }
 }
 
-impl<'a, 'b> PartialEq<Cow<'a, str>> for StackCow<'b> {
+impl<'a> PartialEq<Cow<'a, str>> for StackCow<'_> {
     #[inline]
     fn eq(&self, other: &Cow<'a, str>) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a, 'b> PartialOrd<Cow<'a, str>> for StackCow<'b> {
+impl<'a> PartialOrd<Cow<'a, str>> for StackCow<'_> {
     fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialEq<String> for StackCow<'a> {
+impl PartialEq<String> for StackCow<'_> {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialOrd<String> for StackCow<'a> {
+impl PartialOrd<String> for StackCow<'_> {
     fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialEq<str> for StackCow<'a> {
+impl PartialEq<str> for StackCow<'_> {
     #[inline]
     fn eq(&self, other: &str) -> bool {
         let s: &str = self.as_ref();
@@ -264,32 +264,32 @@ impl<'a> PartialEq<str> for StackCow<'a> {
     }
 }
 
-impl<'a, 'b> PartialEq<&'b str> for StackCow<'a> {
+impl PartialEq<&str> for StackCow<'_> {
     #[inline]
     fn eq(&self, other: &&str) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a, 'b> PartialEq<StackCow<'a>> for &'b str {
+impl<'a> PartialEq<StackCow<'a>> for &str {
     fn eq(&self, other: &StackCow<'a>) -> bool {
         self.eq(&other.as_str())
     }
 }
 
-impl<'a> FromIterator<char> for StackCow<'a> {
+impl FromIterator<char> for StackCow<'_> {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
         Self::Owned(StackString::from_iter(iter))
     }
 }
 
-impl<'a> PartialOrd<str> for StackCow<'a> {
+impl PartialOrd<str> for StackCow<'_> {
     fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
         self.as_str().partial_cmp(other)
     }
 }
 
-impl<'a, 'b> PartialOrd<&'b str> for StackCow<'a> {
+impl PartialOrd<&str> for StackCow<'_> {
     fn partial_cmp(&self, other: &&str) -> Option<std::cmp::Ordering> {
         self.as_str().partial_cmp(*other)
     }

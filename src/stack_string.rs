@@ -20,7 +20,7 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "utoipa_types")]
-use utoipa::{ToSchema, PartialSchema};
+use utoipa::{PartialSchema, ToSchema};
 
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
@@ -267,13 +267,13 @@ impl PartialOrd<StackString> for str {
     }
 }
 
-impl<'a> PartialEq<StackString> for &'a str {
+impl PartialEq<StackString> for &str {
     fn eq(&self, other: &StackString) -> bool {
         PartialEq::eq(&self[..], &other[..])
     }
 }
 
-impl<'a> PartialOrd<StackString> for &'a str {
+impl PartialOrd<StackString> for &str {
     fn partial_cmp(&self, other: &StackString) -> Option<std::cmp::Ordering> {
         PartialOrd::partial_cmp(&self[..], &other[..])
     }

@@ -25,7 +25,7 @@ use bytes::BytesMut;
 use postgres_types::{FromSql, IsNull, ToSql, Type};
 
 #[cfg(feature = "utoipa_types")]
-use utoipa::{ToSchema, PartialSchema};
+use utoipa::{PartialSchema, ToSchema};
 
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
@@ -232,15 +232,13 @@ impl<'de, const CAP: usize> Deserialize<'de> for SmallString<CAP> {
     where
         D: Deserializer<'de>,
     {
-        deserializer
-            .deserialize_string(SmartStringVisitor(PhantomData))
-            .map(SmallString::from)
+        deserializer.deserialize_string(SmartStringVisitor(PhantomData))
     }
 }
 
 struct SmartStringVisitor<const CAP: usize>(PhantomData<*const SmallString<CAP>>);
 
-impl<'de, const CAP: usize> Visitor<'de> for SmartStringVisitor<CAP> {
+impl<const CAP: usize> Visitor<'_> for SmartStringVisitor<CAP> {
     type Value = SmallString<CAP>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
