@@ -26,6 +26,9 @@ use utoipa::{PartialSchema, ToSchema};
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
 
+#[cfg(feature = "axum_types")]
+use axum::body::Body;
+
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -381,6 +384,14 @@ impl IntoResponse for SmartString {
     fn into_response(self) -> axum::response::Response {
         let s: String = self.into();
         s.into_response()
+    }
+}
+
+#[cfg(feature = "axum_types")]
+impl From<SmartString> for Body {
+    fn from(value: SmartString) -> Self {
+        let s: String = value.into();
+        s.into()
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"

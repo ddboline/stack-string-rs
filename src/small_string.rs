@@ -30,6 +30,9 @@ use utoipa::{PartialSchema, ToSchema};
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
 
+#[cfg(feature = "axum_types")]
+use axum::body::Body;
+
 #[cfg(feature = "async_graphql")]
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -557,6 +560,14 @@ impl<const CAP: usize> IntoResponse for SmallString<CAP> {
     fn into_response(self) -> axum::response::Response {
         let s: String = self.into();
         s.into_response()
+    }
+}
+
+#[cfg(feature = "axum_types")]
+impl<const CAP: usize> From<SmallString<CAP>> for Body {
+    fn from(value: SmallString<CAP>) -> Self {
+        let s: String = value.into();
+        s.into()
     }
 }
 

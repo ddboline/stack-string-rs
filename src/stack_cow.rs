@@ -25,6 +25,9 @@ use utoipa::{PartialSchema, ToSchema};
 #[cfg(feature = "axum_types")]
 use axum::response::IntoResponse;
 
+#[cfg(feature = "axum_types")]
+use axum::body::Body;
+
 #[derive(Display, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum StackCow<'a> {
     Borrowed(&'a str),
@@ -364,6 +367,14 @@ impl<'a> IntoResponse for StackCow<'a> {
     fn into_response(self) -> axum::response::Response {
         let s: String = self.into();
         s.into_response()
+    }
+}
+
+#[cfg(feature = "axum_types")]
+impl<'a> From<StackCow<'a>> for Body {
+    fn from(value: StackCow<'a>) -> Self {
+        let s: String = value.into();
+        s.into()
     }
 }
 
