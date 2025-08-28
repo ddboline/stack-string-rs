@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "1.1.2"
+version = "1.1.3"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -20,13 +20,13 @@ smartstring = {version="1.0", features=["serde"], optional=true}
 postgres-types = {version="0.2", optional=true}
 bytes = {version="1.10", optional=true}
 async-graphql = {version="7.0", features=["dataloader"], optional=true}
-utoipa = {version="5.3", optional=true}
+utoipa = {version="5.4", optional=true}
 axum = {version="0.8", optional=true}
 
 [dev-dependencies]
 rand = "0.9"
 serde_json = "1.0"
-tokio = {version = "1.44", features=["rt", "macros", "rt-multi-thread"]}
+tokio = {version = "1.47", features=["rt", "macros", "rt-multi-thread"]}
 async-trait = "0.1"
 
 [features]

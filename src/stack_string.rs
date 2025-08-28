@@ -699,7 +699,8 @@ mod tests {
             ))
             .finish();
         let sdl = schema.sdl();
-
+        
+        std::fs::write("sdl_file_compactstring.txt", &sdl).unwrap();
         assert_eq!(&sdl, expected_sdl);
     }
 }
