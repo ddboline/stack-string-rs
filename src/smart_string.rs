@@ -626,8 +626,6 @@ mod tests {
 
     #[test]
     fn test_format_smartstr() {
-        use crate::format_smartstr;
-
         let s = format_smartstr!("This is a test {}", 22);
         assert_eq!(s, SmartString::from("This is a test 22"));
     }
