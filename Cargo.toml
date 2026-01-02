@@ -1,6 +1,6 @@
 [package]
 name = "stack-string"
-version = "1.1.3"
+version = "1.1.4"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 description = "A wrapper around SmartString which adds support for various extensions"
@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 serde = {version="1.0", features=["derive"]}
-derive_more = {version="2.0", features=["full"]}
+derive_more = {version="2.1", features=["full"]}
 compact_str = {version="0.9", features=["serde", "markup", "bytes"]}
 arrayvec = {version="0.7"}
 smartstring = {version="1.0", features=["serde"], optional=true}
