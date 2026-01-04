@@ -1,8 +1,8 @@
 use arrayvec::ArrayString;
 use core::marker::PhantomData;
 use serde::{
-    de::{Error, Unexpected, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
+    de::{Error, Unexpected, Visitor},
 };
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
@@ -613,7 +613,7 @@ impl<const CAP: usize> ScalarType for SmallString<CAP> {
 #[cfg(test)]
 mod tests {
     use arrayvec::ArrayString;
-    use rand::{rng as thread_rng, Rng};
+    use rand::{Rng, rng as thread_rng};
     use std::fmt::Write;
 
     #[cfg(feature = "async_graphql")]
@@ -860,8 +860,8 @@ mod tests {
     #[test]
     fn test_smallstring_async_graphql() {
         use async_graphql::{
-            dataloader::{DataLoader, Loader},
             Context, EmptyMutation, EmptySubscription, Object, Schema,
+            dataloader::{DataLoader, Loader},
         };
         use std::{collections::HashMap, convert::Infallible};
 

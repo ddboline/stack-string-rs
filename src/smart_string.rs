@@ -429,7 +429,7 @@ impl ScalarType for SmartString {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rng as thread_rng, Rng};
+    use rand::{Rng, rng as thread_rng};
 
     #[cfg(feature = "async_graphql")]
     use std::future::Future;
@@ -672,8 +672,8 @@ mod tests {
     #[test]
     fn test_stackstring_async_graphql() {
         use async_graphql::{
-            dataloader::{DataLoader, Loader},
             Context, EmptyMutation, EmptySubscription, Object, Schema,
+            dataloader::{DataLoader, Loader},
         };
         use async_trait::async_trait;
         use std::{collections::HashMap, convert::Infallible};

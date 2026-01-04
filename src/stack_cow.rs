@@ -380,7 +380,7 @@ impl<'a> From<StackCow<'a>> for Body {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rng as thread_rng, Rng};
+    use rand::{Rng, rng as thread_rng};
     use serde::Deserialize;
 
     use crate::{StackCow, StackString};

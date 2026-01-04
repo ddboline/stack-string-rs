@@ -394,12 +394,12 @@ impl ScalarType for StackString {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rng as thread_rng, Rng};
+    use rand::{Rng, rng as thread_rng};
 
     #[cfg(feature = "async_graphql")]
     use std::future::Future;
 
-    use crate::{StackString, MAX_INLINE};
+    use crate::{MAX_INLINE, StackString};
 
     #[test]
     fn test_default() {
@@ -638,8 +638,8 @@ mod tests {
     #[test]
     fn test_compact_string_async_graphql() {
         use async_graphql::{
-            dataloader::{DataLoader, Loader},
             Context, EmptyMutation, EmptySubscription, Object, Schema,
+            dataloader::{DataLoader, Loader},
         };
         use async_trait::async_trait;
         use std::{collections::HashMap, convert::Infallible};
@@ -697,7 +697,7 @@ mod tests {
             ))
             .finish();
         let sdl = schema.sdl();
-        
+
         std::fs::write("sdl_file_compactstring.txt", &sdl).unwrap();
         assert_eq!(&sdl, expected_sdl);
     }
