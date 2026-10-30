@@ -241,26 +241,26 @@ impl FromStr for SmartString {
 impl<'a> PartialEq<Cow<'a, str>> for SmartString {
     #[inline]
     fn eq(&self, other: &Cow<'a, str>) -> bool {
-        PartialEq::eq(&self[..], &other[..])
+        PartialEq::eq(self.as_str(), &other[..])
     }
 }
 
 impl<'a> PartialOrd<Cow<'a, str>> for SmartString {
     fn partial_cmp(&self, other: &Cow<'a, str>) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(&self[..], &other[..])
+        PartialOrd::partial_cmp(self.as_str(), &other[..])
     }
 }
 
 impl PartialEq<String> for SmartString {
     #[inline]
     fn eq(&self, other: &String) -> bool {
-        PartialEq::eq(&self[..], &other[..])
+        PartialEq::eq(self.as_str(), &other[..])
     }
 }
 
 impl PartialOrd<String> for SmartString {
     fn partial_cmp(&self, other: &String) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(&self[..], &other[..])
+        PartialOrd::partial_cmp(self.as_str(), &other[..])
     }
 }
 
@@ -273,44 +273,44 @@ impl PartialEq<str> for SmartString {
 
 impl PartialOrd<str> for SmartString {
     fn partial_cmp(&self, other: &str) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(&self[..], other)
+        PartialOrd::partial_cmp(self.as_str(), other)
     }
 }
 
 impl<'a> PartialEq<&'a str> for SmartString {
     #[inline]
     fn eq(&self, other: &&'a str) -> bool {
-        PartialEq::eq(&self[..], &other[..])
+        PartialEq::eq(self.as_str(), &other[..])
     }
 }
 
 impl<'a> PartialOrd<&'a str> for SmartString {
     fn partial_cmp(&self, other: &&'a str) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(&self[..], &other[..])
+        PartialOrd::partial_cmp(self.as_str(), &other[..])
     }
 }
 
 impl PartialEq<SmartString> for str {
     fn eq(&self, other: &SmartString) -> bool {
-        PartialEq::eq(self, &other[..])
+        PartialEq::eq(self, other.as_str())
     }
 }
 
 impl PartialOrd<SmartString> for str {
     fn partial_cmp(&self, other: &SmartString) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(self, &other[..])
+        PartialOrd::partial_cmp(self, other.as_str())
     }
 }
 
 impl<'a> PartialEq<SmartString> for &'a str {
     fn eq(&self, other: &SmartString) -> bool {
-        PartialEq::eq(&self[..], &other[..])
+        PartialEq::eq(self, &other.as_str())
     }
 }
 
 impl<'a> PartialOrd<SmartString> for &'a str {
     fn partial_cmp(&self, other: &SmartString) -> Option<std::cmp::Ordering> {
-        PartialOrd::partial_cmp(&self[..], &other[..])
+        PartialOrd::partial_cmp(&self[..], other.as_str())
     }
 }
 
@@ -429,7 +429,7 @@ impl ScalarType for SmartString {
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, rng as thread_rng};
+    use rand::{RngExt, rng as thread_rng};
 
     #[cfg(feature = "async_graphql")]
     use std::future::Future;

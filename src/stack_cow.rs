@@ -110,7 +110,7 @@ impl Deref for StackCow<'_> {
     fn deref(&self) -> &Self::Target {
         match self {
             Self::Borrowed(b) => b,
-            Self::Owned(o) => o,
+            Self::Owned(o) => o.as_str(),
         }
     }
 }
@@ -380,7 +380,7 @@ impl<'a> From<StackCow<'a>> for Body {
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, rng as thread_rng};
+    use rand::{RngExt, rng as thread_rng};
     use serde::Deserialize;
 
     use crate::{StackCow, StackString};

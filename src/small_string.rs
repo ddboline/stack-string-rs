@@ -613,7 +613,7 @@ impl<const CAP: usize> ScalarType for SmallString<CAP> {
 #[cfg(test)]
 mod tests {
     use arrayvec::ArrayString;
-    use rand::{Rng, rng as thread_rng};
+    use rand::{rng as thread_rng, RngExt};
     use std::fmt::Write;
 
     #[cfg(feature = "async_graphql")]
